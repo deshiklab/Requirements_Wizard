@@ -1,15 +1,14 @@
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 import net from 'net';
+import path from 'path';
 import { Client } from 'pg';
 
 const PG_PORT = 5432;
-const PG_DATA = '/var/lib/postgresql/data';
-const DB_NAME = 'requirements_wizard';
 
 function isPortOpen(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
-    socket.setTimeout(1000);
+    socket.setTimeout(500);
     socket.once('connect', () => {
       socket.destroy();
       resolve(true);
@@ -26,27 +25,73 @@ function isPortOpen(port: number): Promise<boolean> {
   });
 }
 
+async function waitForPort(port: number, maxRetries = 20): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    const open = await isPortOpen(port);
+    if (open) return;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`Port ${port} did not become available in time.`);
+}
+
 export async function ensurePostgres(): Promise<void> {
   const open = await isPortOpen(PG_PORT);
   if (!open) {
-    console.log('PostgreSQL is not running on port 5432. Starting pg_ctl...');
-    try {
-      execSync(`pg_ctl -D ${PG_DATA} -l /tmp/postgresql.log start`, { stdio: 'inherit' });
-    } catch {
-      // If data dir not initialized
-      execSync(`initdb -D ${PG_DATA} -U postgres --auth=trust`, { stdio: 'inherit' });
-      execSync(`pg_ctl -D ${PG_DATA} -l /tmp/postgresql.log start`, { stdio: 'inherit' });
-    }
+    console.log('PostgreSQL is not running on port 5432. Starting PGlite wire server...');
+    const serverScript = path.join(__dirname, 'pg-server.js');
+    const child = spawn(process.execPath, [serverScript], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+
+    await waitForPort(PG_PORT);
+    console.log('PostgreSQL server is now listening on port 5432.');
   }
 
-  // Ensure DB exists
-  const client = new Client({ host: '127.0.0.1', port: PG_PORT, user: 'postgres' });
+  // Ensure DB & Tables exist
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/requirements_wizard',
+  });
   await client.connect();
-  const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'`);
-  if (res.rows.length === 0) {
-    console.log(`Database "${DB_NAME}" does not exist. Creating...`);
-    await client.query(`CREATE DATABASE ${DB_NAME}`);
-  }
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS "user" (
+      "id" TEXT PRIMARY KEY,
+      "email" TEXT UNIQUE NOT NULL,
+      "name" TEXT,
+      "role" TEXT NOT NULL DEFAULT 'user',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS "formDraft" (
+      "id" TEXT PRIMARY KEY,
+      "title" TEXT NOT NULL DEFAULT 'Untitled Requirements Spec',
+      "currentStep" INTEGER NOT NULL DEFAULT 1,
+      "status" TEXT NOT NULL DEFAULT 'draft',
+      "data" JSONB NOT NULL,
+      "stepProgress" JSONB,
+      "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS "fileReference" (
+      "id" TEXT PRIMARY KEY,
+      "fileName" TEXT NOT NULL,
+      "originalName" TEXT NOT NULL,
+      "mimeType" TEXT NOT NULL,
+      "fileSize" INTEGER NOT NULL,
+      "filePath" TEXT NOT NULL,
+      "metadata" JSONB,
+      "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+      "draftId" TEXT REFERENCES "formDraft"("id") ON DELETE SET NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   await client.end();
 }
 

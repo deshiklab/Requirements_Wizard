@@ -11,12 +11,14 @@
     "db:start": "tsx scripts/ensure-db.ts",
     "db:emit": "prisma contract emit",
     "db:update": "prisma db update --no-interactive --confirm requirements_wizard",
-    "test": "tsx scripts/test-phase1.ts && tsx scripts/test-phase2.ts && tsx scripts/test-phase3.ts",
+    "test": "tsx scripts/test-phase1.ts && tsx scripts/test-phase2.ts && tsx scripts/test-phase3.ts && tsx scripts/test-phase4.ts",
     "test:phase1": "tsx scripts/test-phase1.ts",
     "test:phase2": "tsx scripts/test-phase2.ts",
-    "test:phase3": "tsx scripts/test-phase3.ts"
+    "test:phase3": "tsx scripts/test-phase3.ts",
+    "test:phase4": "tsx scripts/test-phase4.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@prisma/client": "^5.22.0",
     "@prisma/orm-postgres": "^8.0.0-rc.11",
     "@radix-ui/react-dialog": "^1.1.23",
@@ -32,6 +34,8 @@
     "lucide-react": "^1.47.0",
     "next": "14.2.35",
     "pg": "^8.23.0",
+    "pg-mem": "^3.0.14",
+    "pglite-server": "^0.1.5",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^3.7.0",

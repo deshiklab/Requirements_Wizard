@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import {
   ConditionalEvaluationResult,
   calculateSpecReadinessScore,
 } from '@/lib/conditional-logic/engine';
+import { SpecificationExportEngine } from '@/lib/export/engine';
 import {
   ClipboardCheck,
   Code2,
@@ -18,6 +20,11 @@ import {
   ShieldCheck,
   Copy,
   Check,
+  Download,
+  Printer,
+  FileText,
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 
 interface Step6ReviewProps {
@@ -25,6 +32,7 @@ interface Step6ReviewProps {
   formData: WizardFormData;
   onChange: (data: Step6ReviewData) => void;
   evaluation: ConditionalEvaluationResult;
+  draftId?: string;
 }
 
 export function Step6Review({
@@ -32,6 +40,7 @@ export function Step6Review({
   formData,
   onChange,
   evaluation,
+  draftId,
 }: Step6ReviewProps) {
   const [copied, setCopied] = useState(false);
   const readiness = calculateSpecReadinessScore(formData, evaluation);
@@ -42,17 +51,114 @@ export function Step6Review({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleQuickDownload = (format: 'markdown' | 'json' | 'html') => {
+    const doc = SpecificationExportEngine.exportDocument(formData, format, {
+      docTitle: formData.step1_identity.projectName || 'Software_Requirements_Specification',
+      version: '1.0.0',
+      generatedBy: data.signOffArchitect || 'Lead Systems Architect',
+    });
+    const blob = new Blob([doc.content], { type: doc.mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    const doc = SpecificationExportEngine.exportDocument(formData, 'html', {
+      docTitle: formData.step1_identity.projectName || 'Software_Requirements_Specification',
+      version: '1.0.0',
+      generatedBy: data.signOffArchitect || 'Lead Systems Architect',
+    });
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(doc.content);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 350);
+    } else {
+      window.print();
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <ClipboardCheck className="w-5 h-5 text-emerald-400" />
-          Stage 6: Specification Review &amp; Readiness Verification
-        </h2>
-        <p className="text-xs md:text-sm text-slate-400 mt-1">
-          Review the synthesized requirements, inspect the PostgreSQL JSONB document payload, and verify readiness before finalization.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-emerald-400" />
+            Stage 6: Specification Review &amp; IEEE 830 PRD Export
+          </h2>
+          <p className="text-xs md:text-sm text-slate-400 mt-1">
+            Review the synthesized requirements, inspect the PostgreSQL JSONB document payload, and export the official IEEE 830 specification.
+          </p>
+        </div>
+
+        {draftId && (
+          <Link href={`/wizard/${draftId}/export`}>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs h-9 shadow-md shadow-indigo-600/20">
+              <FileText className="w-4 h-4 mr-1.5" /> Full Document Presentation &rarr;
+            </Button>
+          </Link>
+        )}
       </div>
+
+      {/* Phase 4 Document Export Action Banner */}
+      <Card className="border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-900/60 shadow-md">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span className="text-xs font-bold text-indigo-200">
+                Phase 4: Multi-Format Specification Exporter
+              </span>
+              <Badge variant="outline" className="text-[9px] text-indigo-400 border-indigo-500/40">
+                IEEE 830 Compliant
+              </Badge>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleQuickDownload('markdown')}
+                className="text-xs border-blue-500/40 text-blue-300 hover:bg-blue-950/40 h-7"
+              >
+                <Download className="w-3 h-3 mr-1" /> Markdown (.md)
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleQuickDownload('json')}
+                className="text-xs border-purple-500/40 text-purple-300 hover:bg-purple-950/40 h-7"
+              >
+                <Download className="w-3 h-3 mr-1" /> JSON (.json)
+              </Button>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={handlePrint}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-7"
+              >
+                <Printer className="w-3 h-3 mr-1" /> Print / PDF
+              </Button>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Exports full requirement sets, Gherkin acceptance scenarios, personas, SLAs, and formal architect sign-off into standard documentation formats.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Quantitative Readiness Score Card */}
       <Card className="bg-slate-900/80 border-slate-800 shadow-md">
@@ -236,7 +342,7 @@ export function Step6Review({
               >
                 <option value="draft">Draft (Work in Progress)</option>
                 <option value="in_progress">In Progress (Active Elicitation)</option>
-                <option value="review">Review (Ready for Phase 3 AI Elicitation)</option>
+                <option value="review">Review (Ready for Phase 4 Export)</option>
                 <option value="finalized">Finalized (Specification Frozen)</option>
               </select>
             </div>

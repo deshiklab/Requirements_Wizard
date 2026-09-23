@@ -91,6 +91,41 @@ export const ApplyExtractedToDraftSchema = z.object({
 
 export type ApplyExtractedToDraftInput = z.infer<typeof ApplyExtractedToDraftSchema>;
 
+// Phase 4: Document Generation & Export Schemas
+export const ExportDocumentSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  format: z.enum(['markdown', 'json', 'html']).default('markdown'),
+  options: z
+    .object({
+      includeGherkin: z.boolean().optional(),
+      includeAuditTrail: z.boolean().optional(),
+      includeReadinessScore: z.boolean().optional(),
+      docTitle: z.string().optional(),
+      version: z.string().optional(),
+      generatedBy: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type ExportDocumentInput = z.infer<typeof ExportDocumentSchema>;
+
+export const DirectExportSchema = z.object({
+  formData: z.record(z.string(), z.any()),
+  format: z.enum(['markdown', 'json', 'html']).default('markdown'),
+  options: z
+    .object({
+      includeGherkin: z.boolean().optional(),
+      includeAuditTrail: z.boolean().optional(),
+      includeReadinessScore: z.boolean().optional(),
+      docTitle: z.string().optional(),
+      version: z.string().optional(),
+      generatedBy: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type DirectExportInput = z.infer<typeof DirectExportSchema>;
+
 export type ActionResponse<T> =
   | { success: true; data: T; message?: string }
   | { success: false; error: string; details?: unknown };

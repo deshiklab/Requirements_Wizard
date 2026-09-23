@@ -378,6 +378,7 @@ export function WizardContainer({
               formData={formData}
               onChange={(d: Step6ReviewData) => setFormData({ ...formData, step6_review: d })}
               evaluation={evaluation}
+              draftId={draftId}
             />
           )}
 

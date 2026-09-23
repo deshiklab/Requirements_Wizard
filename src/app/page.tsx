@@ -19,6 +19,10 @@ import {
   BrainCircuit,
   SearchCode,
   BookOpenCheck,
+  FileText,
+  Printer,
+  Download,
+  Code2,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -65,17 +69,17 @@ export default async function Home() {
       id: "phase-3",
       name: "Phase 3: AI-Assisted Requirements Elicitation",
       description: "Ambiguity scoring, Gherkin scenario generator, context document ingestion, and proactive elicitation copilot.",
-      status: "COMPLETED & VERIFIED",
+      status: "COMPLETED",
       badgeVariant: "success" as const,
-      isCurrent: true,
+      isCurrent: false,
     },
     {
       id: "phase-4",
-      name: "Phase 4: Document Generation & Export",
-      description: "PRD/SRS compilation, IEEE 830 compliant formatting, PDF/Markdown/JSON schema exports, and audit trails.",
-      status: "AWAITING APPROVAL",
-      badgeVariant: "secondary" as const,
-      isCurrent: false,
+      name: "Phase 4: Document Generation & PRD Export",
+      description: "IEEE 830 compliant SRS compilation, multi-format export (Markdown, JSON, Printable HTML/PDF), and readiness verification.",
+      status: "COMPLETED & VERIFIED",
+      badgeVariant: "success" as const,
+      isCurrent: true,
     },
   ];
 
@@ -86,15 +90,15 @@ export default async function Home() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-              <Badge variant="outline" className="text-xs uppercase tracking-wider text-indigo-400 border-indigo-500/30">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <Badge variant="outline" className="text-xs uppercase tracking-wider text-emerald-400 border-emerald-500/30">
                 SDAD Execution Framework
               </Badge>
               <Badge variant="secondary" className="text-xs">
                 Next.js 14 App Router
               </Badge>
-              <Badge variant="outline" className="text-xs text-purple-400 border-purple-500/30">
-                Phase 3 Engine Active
+              <Badge variant="outline" className="text-xs text-indigo-400 border-indigo-500/30">
+                Phase 4 Live &bull; IEEE 830 SRS Ready
               </Badge>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
@@ -102,7 +106,7 @@ export default async function Home() {
               Requirements Wizard
             </h1>
             <p className="text-sm md:text-base text-slate-400 mt-1 max-w-2xl">
-              An AI-assisted software requirements elicitation platform engineered under the Spec-Driven Agentic Development (SDAD) methodology.
+              An AI-driven software requirements specification and document export platform engineered under the Spec-Driven Agentic Development (SDAD) methodology.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -184,11 +188,11 @@ export default async function Home() {
                   SDAD Directed Acyclic Graph (DAG) Progress
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Strict step-by-step gate architecture. Each phase requires automated test proof and human sign-off before downstream dependency execution.
+                  Strict step-by-step gate architecture. Phase 4 provides complete IEEE 830 SRS document export across Markdown, JSON, and PDF formats.
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="border-indigo-500/40 text-indigo-400">
-                Phase 3 Verified
+              <Badge variant="outline" className="border-emerald-500/40 text-emerald-400">
+                Phase 4 Complete
               </Badge>
             </div>
           </CardHeader>
@@ -227,10 +231,10 @@ export default async function Home() {
                 <div>
                   <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                     <Layers className="w-4 h-4 text-blue-400" />
-                    Persisted Form Drafts in PostgreSQL
+                    Persisted Specifications &amp; Export Quick-Actions
                   </CardTitle>
                   <CardDescription className="text-slate-400 text-xs">
-                    Resume an active specification or test AI-driven elicitation in real time.
+                    Resume an active specification draft or view the official IEEE 830 PRD export.
                   </CardDescription>
                 </div>
                 <Link href="/wizard">
@@ -261,11 +265,18 @@ export default async function Home() {
                         </span>
                       </div>
                     </div>
-                    <Link href={`/wizard/${draft.id}`}>
-                      <Button size="sm" variant="ghost" className="h-8 text-xs text-indigo-400 hover:text-white">
-                        Resume <ExternalLink className="w-3 h-3 ml-1" />
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Link href={`/wizard/${draft.id}`}>
+                        <Button size="sm" variant="ghost" className="h-8 text-xs text-indigo-400 hover:text-white">
+                          Edit
+                        </Button>
+                      </Link>
+                      <Link href={`/wizard/${draft.id}/export`}>
+                        <Button size="sm" variant="outline" className="h-8 text-xs border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/50">
+                          <FileText className="w-3 h-3 mr-1" /> View SRS
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -273,74 +284,62 @@ export default async function Home() {
           </Card>
         )}
 
-        {/* Phase 3 AI Engine Architecture Highlights */}
+        {/* Phase 4 Document Generation & Export Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Phase 3 Capabilities */}
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <BrainCircuit className="w-4 h-4 text-indigo-400" />
-                Phase 3: AI Elicitation Engine Capabilities
+                <FileText className="w-4 h-4 text-indigo-400" />
+                Phase 4: Document Generation &amp; Multi-Format Export
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Advanced requirements refinement, automated disambiguation, and context ingestion.
+                Transforms flexible JSONB form drafts into formal IEEE 830 specifications.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 text-xs text-slate-300">
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-indigo-400 flex items-center gap-1.5 mb-1">
-                  <SearchCode className="w-3.5 h-3.5" />
-                  Ambiguity Detection &amp; Clarity Scoring (0-100)
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-blue-400 flex items-center gap-1.5 mb-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  IEEE 830-1998 / ISO 29148 Markdown
                 </span>
-                Flag subjective adjectives (&quot;fast&quot;, &quot;user-friendly&quot;, &quot;scalable&quot;), weak modals, and passive voice, providing quantitative SLA revisions and clarifying questions.
+                Standard-compliant Markdown complete with RFC 2119 normative conventions, In-Scope/Out-of-Scope boundaries, stakeholder persona tables, and Gherkin scenarios.
               </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
-                  <BookOpenCheck className="w-3.5 h-3.5" />
-                  Gherkin Acceptance Criteria Generation
-                </span>
-                Generates formal Given-When-Then scenarios, boundary conditions, rate-limiting guards, and security criteria per requirement.
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
                 <span className="font-bold text-purple-400 flex items-center gap-1.5 mb-1">
-                  <FileCode2 className="w-3.5 h-3.5" />
-                  Context Document Ingestion
+                  <Code2 className="w-3.5 h-3.5" />
+                  Machine-Readable Structured JSON Schema
                 </span>
-                Parses uploaded diagrams, PRDs, and schemas, automatically extracting functional requirements, stakeholder personas, and technical constraints into PostgreSQL drafts.
+                Comprehensive JSON contract with metadata, cryptographic checksum, structured user stories, and acceptance criteria for automated consumption by coding agents.
               </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-400 flex items-center gap-1.5 mb-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Proactive Elicitation Copilot
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                  <Printer className="w-3.5 h-3.5" />
+                  Printable HTML &amp; One-Click PDF Generation
                 </span>
-                Analyzes draft gaps based on archetype (AI Agentic, Enterprise SaaS, Mobile) and surfaces drill-down architectural options with 1-click spec adoption.
+                Clean typography with CSS print stylesheet (`@media print`), automatic page breaks, and formal architectural sign-off stamp.
               </div>
             </CardContent>
           </Card>
 
-          {/* Conditional Logic Engine Specifications */}
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                Deterministic Validation &amp; Verification Rules
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                End-to-End Architectural Integrity &amp; Verification
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Dual-tier verification: deterministic local engine + isolated Next.js Server Actions.
+                Strict quality gates enforced at every layer of the SDAD pipeline.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 text-xs text-slate-300">
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-300">Offline-Capable Heuristics:</span> Deterministic NLP analysis runs locally with zero external network failure dependencies.
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-amber-300">Readiness Scoring:</span> Quantitative audit checks 6 dimension criteria (scope, personas, P0s, SLAs, zero critical warnings).
               </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-rose-400">Zod Contract Safety:</span> All AI actions strictly guarded with Zod runtime schemas before state mutations.
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-rose-400">Server Action Isolation:</span> All export operations use validated server action boundaries (`exportDocumentAction`).
               </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-blue-400">PostgreSQL JSONB Mutations:</span> Direct merge and state persistence for elicited requirements and personas.
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-emerald-400">IEEE 830 Compliance Preparation:</span> Formats functional specifications to standard user story and Gherkin definitions of done.
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-indigo-400">Live Browser Preview:</span> Instant preview at `/wizard/[id]/export` with interactive format switching and clipboard copy.
               </div>
             </CardContent>
           </Card>
@@ -349,9 +348,9 @@ export default async function Home() {
         {/* Footer info */}
         <div className="text-center text-xs text-slate-500 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>SDAD Engine v1.0.0 &bull; deshiklab/Requirements_Wizard</span>
-          <span className="flex items-center gap-1.5 text-indigo-400">
-            <BrainCircuit className="w-3.5 h-3.5" />
-            Phase 3 AI Elicitation Engine Operational &bull; Awaiting Human Review
+          <span className="flex items-center gap-1.5 text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Phase 4 Document Generation Operational &bull; Awaiting Human Sign-off
           </span>
         </div>
       </div>
