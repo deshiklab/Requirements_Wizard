@@ -1,21 +1,14 @@
 'use server';
 
-import { z } from 'zod';
 import { db } from '@/lib/db';
+import { CreateUserSchema, CreateUserInput, ActionResponse } from './schemas';
 
-export const CreateUserSchema = z.object({
-  id: z.string().uuid().optional(),
-  email: z.string().email('Invalid email address'),
-  name: z.string().min(1).optional(),
-  role: z.enum(['user', 'admin', 'architect', 'stakeholder']).default('user'),
-});
-
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export type { CreateUserInput };
 
 /**
  * Creates or retrieves a user by email.
  */
-export async function getOrCreateUserAction(input: CreateUserInput) {
+export async function getOrCreateUserAction(input: CreateUserInput): Promise<ActionResponse<any>> {
   try {
     const validated = CreateUserSchema.parse(input);
 

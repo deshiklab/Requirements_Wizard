@@ -11,8 +11,9 @@
     "db:start": "tsx scripts/ensure-db.ts",
     "db:emit": "prisma contract emit",
     "db:update": "prisma db update --no-interactive --confirm requirements_wizard",
-    "test": "tsx scripts/test-phase1.ts",
-    "test:phase1": "tsx scripts/test-phase1.ts"
+    "test": "tsx scripts/test-phase1.ts && tsx scripts/test-phase2.ts",
+    "test:phase1": "tsx scripts/test-phase1.ts",
+    "test:phase2": "tsx scripts/test-phase2.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

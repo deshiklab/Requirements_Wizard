@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Database,
@@ -11,6 +13,9 @@ import {
   Workflow,
   Sparkles,
   Cpu,
+  ArrowRight,
+  ExternalLink,
+  PlusCircle,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +35,7 @@ export default async function Home() {
     userCount = users.length;
     draftCount = drafts.length;
     fileCount = files.length;
-    recentDrafts = drafts.slice(-3).reverse();
+    recentDrafts = drafts.slice(-4).reverse();
   } catch (err: any) {
     dbStatus = "error";
     console.error("DB connection error in Home page:", err.message);
@@ -43,22 +48,22 @@ export default async function Home() {
       description: "Next.js 14 App Router, Tailwind/Shadcn, PostgreSQL schema with JSONB multi-stage drafts & file references.",
       status: "COMPLETED",
       badgeVariant: "success" as const,
-      isCurrent: true,
+      isCurrent: false,
     },
     {
       id: "phase-2",
-      name: "Phase 2: Multi-Stage Wizard Form Engine",
-      description: "Interactive multi-step elicitation form with auto-save draft state persistence and progress tracking.",
-      status: "AWAITING HUMAN APPROVAL",
-      badgeVariant: "secondary" as const,
-      isCurrent: false,
+      name: "Phase 2: Multi-Stage Wizard & Logic Engine",
+      description: "Dynamic multi-step form engine with real-time conditional logic, archetype rules, autosave, and readiness scoring.",
+      status: "COMPLETED & VERIFIED",
+      badgeVariant: "success" as const,
+      isCurrent: true,
     },
     {
       id: "phase-3",
       name: "Phase 3: AI-Assisted Requirements Elicitation",
       description: "Dynamic AI prompts, automated ambiguity reduction, functional/NFR decomposition, and acceptance criteria.",
-      status: "BLOCKED ON PHASE 2",
-      badgeVariant: "outline" as const,
+      status: "AWAITING HUMAN APPROVAL",
+      badgeVariant: "secondary" as const,
       isCurrent: false,
     },
     {
@@ -74,7 +79,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 p-6 md:p-12">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
+        {/* Header & Launch CTA */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -94,13 +99,14 @@ export default async function Home() {
               An AI-driven software requirements elicitation platform built under the Spec-Driven Agentic Development (SDAD) methodology.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-xs font-semibold text-slate-400 uppercase">Current Milestone</div>
-              <div className="text-sm font-bold text-emerald-400 flex items-center justify-end gap-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Phase 1 Verified
-              </div>
-            </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <Link href="/wizard">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 h-auto flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+                <PlusCircle className="w-4 h-4" />
+                Launch Requirements Wizard
+                <ArrowRight className="w-4 h-4 ml-0.5" />
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -175,8 +181,8 @@ export default async function Home() {
                   Strict step-by-step gate architecture. Each phase requires automated test proof and human sign-off before downstream dependency execution.
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="border-blue-500/40 text-blue-400">
-                DAG Order Enforced
+              <Badge variant="outline" className="border-emerald-500/40 text-emerald-400">
+                Phase 2 Verified
               </Badge>
             </div>
           </CardHeader>
@@ -188,6 +194,8 @@ export default async function Home() {
                   className={`p-4 rounded-lg border transition-all ${
                     phase.isCurrent
                       ? "bg-emerald-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
+                      : phase.status === "COMPLETED"
+                      ? "bg-slate-950/50 border-emerald-500/20"
                       : "bg-slate-950/40 border-slate-800/80"
                   }`}
                 >
@@ -205,92 +213,125 @@ export default async function Home() {
           </CardContent>
         </Card>
 
-        {/* Schema Architecture & Verification Proof */}
+        {/* Active Drafts & Quick Resume Section */}
+        {recentDrafts.length > 0 && (
+          <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-blue-400" />
+                    Persisted Form Drafts in PostgreSQL
+                  </CardTitle>
+                  <CardDescription className="text-slate-400 text-xs">
+                    Resume an active specification or inspect its live JSONB state.
+                  </CardDescription>
+                </div>
+                <Link href="/wizard">
+                  <Button size="sm" variant="outline" className="text-xs border-slate-700">
+                    + New Specification
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {recentDrafts.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className="p-3.5 rounded-lg border border-slate-800 bg-slate-950/60 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm text-white truncate">{draft.title}</div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                        <span className="font-mono text-blue-400">Step {draft.currentStep}/6</span>
+                        <span>&bull;</span>
+                        <Badge variant="secondary" className="text-[9px] uppercase">
+                          {draft.status}
+                        </Badge>
+                        <span>&bull;</span>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          ID: {draft.id.slice(0, 8)}...
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/wizard/${draft.id}`}>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs text-blue-400 hover:text-white">
+                        Resume <ExternalLink className="w-3 h-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Schema Architecture & Engine Capabilities */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Schema Specifications */}
+          {/* Phase 2 Frontend Architecture */}
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                 <Server className="w-4 h-4 text-blue-400" />
-                PostgreSQL Schema Definition (Prisma Contract)
+                Phase 2: Multi-Stage Wizard Engine Architecture
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Accounts for Users, Multi-Stage Form Drafts (JSONB), and File Upload References.
+                Features 6 interactive stages with real-time state persistence to PostgreSQL.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 font-mono text-xs text-slate-300 bg-slate-950/70 p-4 rounded-md border border-slate-800">
-              <div className="text-slate-400">{'// Model 1: User (Entity & Role Hierarchy)'}</div>
-              <div className="text-blue-300">User &#123; id: uuid, email: string (unique), role: string, drafts: FormDraft[] &#125;</div>
-
-              <div className="text-slate-400 pt-2">{'// Model 2: FormDraft (Multi-stage JSONB state storage)'}</div>
-              <div className="text-emerald-300">
-                FormDraft &#123; id: uuid, title: string, currentStep: int, status: string, <span className="font-bold underline text-amber-300">data: Json (JSONB)</span>, stepProgress: Json? &#125;
+            <CardContent className="space-y-2.5 text-xs text-slate-300">
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-blue-400">Stage 1: Scope &amp; Archetype</span> &bull; Web, Mobile, API, SaaS, AI-Agentic archetype selectors with conditional parameters.
               </div>
-
-              <div className="text-slate-400 pt-2">{'// Model 3: FileReference (Context attachment reference)'}</div>
-              <div className="text-purple-300">
-                FileReference &#123; id: uuid, fileName: string, originalName: string, mimeType: string, fileSize: int, metadata: Json? &#125;
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-emerald-400">Stage 2: Personas &amp; Actors</span> &bull; Dynamic persona cards with goals, pain points, and RBAC tiers.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-amber-400">Stage 3: Functional Requirements</span> &bull; P0/P1/P2 priorities, user story formula, testable acceptance criteria lists.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-purple-400">Stage 4: NFRs &amp; Quality Attributes</span> &bull; Latency targets, uptime SLAs, HIPAA/GDPR/SOC2 compliance checks.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-indigo-400">Stage 5: Tech Stack &amp; Context Files</span> &bull; Framework selector, third-party integrations, diagram upload references.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-rose-400">Stage 6: Review &amp; Readiness</span> &bull; Quantitative Spec Readiness Score (0-100) and live JSONB inspector.
               </div>
             </CardContent>
           </Card>
 
-          {/* Test Proof & Server Action Boundary */}
+          {/* Conditional Logic Engine Specifications */}
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                Phase 1 Verification Proof & Server Actions
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                Conditional Logic Rules Engine (`src/lib/conditional-logic`)
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Automated test results from `scripts/test-phase1.ts` confirming end-to-end database writes &amp; reads.
+                Deterministic cross-field evaluation without external API latency.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2 rounded bg-slate-950/60 border border-slate-800">
-                  <span className="flex items-center gap-2 text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    User Creation &amp; Persistence
-                  </span>
-                  <Badge variant="success" className="text-[10px]">22/22 PASSED</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-slate-950/60 border border-slate-800">
-                  <span className="flex items-center gap-2 text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Deep JSONB Draft Payload Write &amp; Read
-                  </span>
-                  <Badge variant="success" className="text-[10px]">VERIFIED</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-slate-950/60 border border-slate-800">
-                  <span className="flex items-center gap-2 text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    File Reference Relation Attachment
-                  </span>
-                  <Badge variant="success" className="text-[10px]">VERIFIED</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-slate-950/60 border border-slate-800">
-                  <span className="flex items-center gap-2 text-slate-200">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Server Action Isolation &amp; Zod Schema Guards
-                  </span>
-                  <Badge variant="success" className="text-[10px]">SECURED</Badge>
-                </div>
+            <CardContent className="space-y-2.5 text-xs text-slate-300">
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-amber-300">Rule 1 (Mobile Archetype):</span> Surfaces offline sync, APNs/FCM push notifications, and App Store review constraints.
               </div>
-
-              {recentDrafts.length > 0 && (
-                <div className="pt-2">
-                  <div className="text-xs font-semibold text-slate-400 mb-1">Latest Verified Draft:</div>
-                  <div className="p-2.5 rounded bg-slate-950/80 border border-slate-800 text-xs font-mono text-slate-300">
-                    <div className="text-emerald-400 font-bold">{recentDrafts[0].title}</div>
-                    <div className="text-slate-400 text-[11px] mt-0.5">
-                      Draft ID: {recentDrafts[0].id.slice(0, 8)}... | Step: {recentDrafts[0].currentStep} | Status: {recentDrafts[0].status}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-amber-300">Rule 2 (Enterprise SaaS):</span> Enforces multi-tenancy models (Shared vs DB-per-tenant) and SAML 2.0 / Okta SSO.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-rose-400">Rule 3 (HIPAA Guardrail):</span> Detects HIPAA selection and mandates AES-256 encryption-at-rest with audit trail.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-blue-400">Rule 4 (Scale &amp; Concurrency):</span> Detects &gt;2500 users / &gt;300 RPS and recommends distributed Redis cache.
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-emerald-400">Rule 5 (High Availability SLA):</span> Cross-checks 99.99% uptime against RTO targets (&le; 15 min requirement).
+              </div>
+              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-indigo-400">Rule 6 (AI Agent Guardrails):</span> Injects structured output validation and human-in-the-loop policies.
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -300,7 +341,7 @@ export default async function Home() {
           <span>SDAD Engine v1.0.0 &bull; deshiklab/Requirements_Wizard</span>
           <span className="flex items-center gap-1.5 text-emerald-400">
             <Sparkles className="w-3.5 h-3.5" />
-            Phase 1 Complete &bull; Awaiting Human Sign-off for Phase 2
+            Phase 2 Complete &bull; Awaiting Human Sign-off for Phase 3
           </span>
         </div>
       </div>

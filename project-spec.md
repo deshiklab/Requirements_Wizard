@@ -61,13 +61,13 @@ Rather than producing unconstrained generative code or raw text blobs, the Wizar
 To eliminate hallucinations and architectural drift, development follows a topological DAG ordering where downstream phases cannot be started until upstream phases have passed automated verification and received explicit human approval.
 
 ```
- [Phase 1: DB & Environment] (CURRENT - COMPLETED & VERIFIED)
+ [Phase 1: DB & Environment] (COMPLETED & VERIFIED)
              │
              ▼
- [Phase 2: Multi-Stage Wizard Form Engine] (Awaiting Human Approval)
+ [Phase 2: Multi-Stage Wizard & Conditional Logic] (COMPLETED & VERIFIED)
              │
              ▼
- [Phase 3: AI-Assisted Elicitation Engine]
+ [Phase 3: AI-Assisted Elicitation Engine] (Awaiting Human Approval)
              │
              ▼
  [Phase 4: Document Generation & Export]
@@ -77,8 +77,8 @@ To eliminate hallucinations and architectural drift, development follows a topol
 ```
 
 ### Phase Definitions:
-- **Phase 1 (Database & Environment):** Initialize Next.js 14 App Router, Tailwind/Shadcn, PostgreSQL schema for users, multi-stage form drafts (JSONB), and file upload references. Verified with automated test suite.
-- **Phase 2 (Multi-Stage Wizard Form Engine):** Build the interactive multi-step wizard UI (Project Overview, Personas, Functional Requirements, Non-Functional Requirements, Technical Constraints) with auto-saving server actions and validation.
+- **Phase 1 (Database & Environment):** [COMPLETED] Initialize Next.js 14 App Router, Tailwind/Shadcn, PostgreSQL schema for users, multi-stage form drafts (JSONB), and file upload references. Verified with automated test suite.
+- **Phase 2 (Multi-Stage Wizard Form Engine & Conditional Logic):** [COMPLETED & VERIFIED] Interactive 6-stage wizard UI (Scope & Archetype, Personas, Functional Requirements, Non-Functional Requirements, Technical Constraints, Review & Readiness) with real-time conditional logic rules engine, dynamic archetype field surfacing, SLA/compliance consistency guards, quantitative readiness scoring, and PostgreSQL JSONB draft state persistence.
 - **Phase 3 (AI-Assisted Requirements Elicitation):** Implement structured LLM-driven elicitation prompts, context ingestion from uploaded file references, ambiguity scoring, and acceptance criteria generation.
 - **Phase 4 (Document Generation & PRD Export):** Assemble completed draft states into IEEE 830-compliant Software Requirements Specifications, exportable to Markdown, JSON, and PDF formats.
 - **Phase 5 (Governance & End-to-End Verification):** Role-based access controls, audit trail history for requirement diffs, and end-to-end integration test coverage.
