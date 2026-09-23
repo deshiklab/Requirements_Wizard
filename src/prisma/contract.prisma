@@ -1,0 +1,42 @@
+// use prisma-8
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+  drafts    FormDraft[]
+  files     FileReference[]
+}
+
+model FormDraft {
+  id           String   @id @default(uuid())
+  title        String   @default("Untitled Requirements Spec")
+  currentStep  Int      @default(1)
+  status       String   @default("draft")
+  data         Json
+  stepProgress Json?
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files        FileReference[]
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+}
+
+model FileReference {
+  id           String     @id @default(uuid())
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  filePath     String
+  metadata     Json?
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draftId      String?
+  draft        FormDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+}
