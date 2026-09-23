@@ -39,6 +39,58 @@ export const CreateUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 
+// Phase 3: AI Elicitation Schemas
+export const AmbiguityAnalysisSchema = z.object({
+  text: z.string().min(1, 'Input text cannot be empty'),
+});
+
+export type AmbiguityAnalysisInput = z.infer<typeof AmbiguityAnalysisSchema>;
+
+export const GenerateCriteriaSchema = z.object({
+  title: z.string().min(1, 'Requirement title is required'),
+  userStory: z.string().optional(),
+  category: z.string().optional(),
+  personaRole: z.string().optional(),
+  archetype: z.enum(['web_app', 'mobile_app', 'api_backend', 'enterprise_saas', 'ai_agentic']).optional(),
+});
+
+export type GenerateCriteriaInput = z.infer<typeof GenerateCriteriaSchema>;
+
+export const ExpandRequirementSchema = z.object({
+  prompt: z.string().min(1, 'Requirement prompt or idea is required'),
+  archetype: z.enum(['web_app', 'mobile_app', 'api_backend', 'enterprise_saas', 'ai_agentic']).optional(),
+  existingCount: z.number().int().nonnegative().optional(),
+});
+
+export type ExpandRequirementInput = z.infer<typeof ExpandRequirementSchema>;
+
+export const IngestDocumentContextSchema = z.object({
+  draftId: z.string().uuid().optional().nullable(),
+  fileId: z.string().optional(),
+  fileName: z.string().optional(),
+  mimeType: z.string().optional(),
+  rawText: z.string().optional(),
+  metadata: z.record(z.string(), z.any()).optional().nullable(),
+});
+
+export type IngestDocumentContextInput = z.infer<typeof IngestDocumentContextSchema>;
+
+export const ElicitationQuestionsSchema = z.object({
+  formData: z.record(z.string(), z.any()),
+  activeStep: z.number().int().min(1).max(6).optional(),
+});
+
+export type ElicitationQuestionsInput = z.infer<typeof ElicitationQuestionsSchema>;
+
+export const ApplyExtractedToDraftSchema = z.object({
+  draftId: z.string().uuid('Valid Draft UUID is required'),
+  requirements: z.array(z.record(z.string(), z.any())).optional(),
+  personas: z.array(z.record(z.string(), z.any())).optional(),
+  preferredStack: z.record(z.string(), z.any()).optional(),
+});
+
+export type ApplyExtractedToDraftInput = z.infer<typeof ApplyExtractedToDraftSchema>;
+
 export type ActionResponse<T> =
   | { success: true; data: T; message?: string }
   | { success: false; error: string; details?: unknown };

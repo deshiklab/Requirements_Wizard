@@ -6,17 +6,34 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Step3FunctionalData, FunctionalRequirement, PriorityLevel } from '@/types/wizard';
 import {
+  analyzeAmbiguityAction,
+  generateCriteriaAction,
+  expandRequirementAction,
+} from '@/actions/ai';
+import {
+  AmbiguityAnalysisResult,
+  GeneratedCriteriaResult,
+} from '@/lib/ai/types';
+import {
   FileCheck2,
   Plus,
   Trash2,
   ListChecks,
   CheckCircle,
   X,
+  Sparkles,
+  SearchCode,
+  ShieldCheck,
+  AlertTriangle,
+  Loader2,
+  ArrowRight,
+  BookOpenCheck,
 } from 'lucide-react';
 
 interface Step3FunctionalProps {
   data: Step3FunctionalData;
   onChange: (data: Step3FunctionalData) => void;
+  archetype?: string;
 }
 
 const PRIORITY_BADGES: Record<PriorityLevel, { label: string; variant: 'destructive' | 'default' | 'secondary' }> = {
@@ -25,8 +42,16 @@ const PRIORITY_BADGES: Record<PriorityLevel, { label: string; variant: 'destruct
   P2: { label: 'P2 - Desirable', variant: 'secondary' },
 };
 
-export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
+export function Step3Functional({ data, onChange, archetype = 'web_app' }: Step3FunctionalProps) {
   const [newCriteriaInputs, setNewCriteriaInputs] = useState<Record<string, string>>({});
+  const [quickPrompt, setQuickPrompt] = useState('');
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  // Per-requirement AI analysis state
+  const [analyzingReqId, setAnalyzingReqId] = useState<string | null>(null);
+  const [generatingReqId, setGeneratingReqId] = useState<string | null>(null);
+  const [ambiguityResults, setAmbiguityResults] = useState<Record<string, AmbiguityAnalysisResult>>({});
+  const [generatedCriteria, setGeneratedCriteria] = useState<Record<string, GeneratedCriteriaResult>>({});
 
   const handleAddRequirement = (custom?: Partial<FunctionalRequirement>) => {
     const nextIndex = data.requirements.length + 1;
@@ -62,8 +87,8 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
     });
   };
 
-  const handleAddCriteria = (reqId: string) => {
-    const text = (newCriteriaInputs[reqId] || '').trim();
+  const handleAddCriteria = (reqId: string, customText?: string) => {
+    const text = (customText || newCriteriaInputs[reqId] || '').trim();
     if (!text) return;
 
     const req = data.requirements.find((r) => r.id === reqId);
@@ -73,7 +98,9 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
       acceptanceCriteria: [...req.acceptanceCriteria, text],
     });
 
-    setNewCriteriaInputs({ ...newCriteriaInputs, [reqId]: '' });
+    if (!customText) {
+      setNewCriteriaInputs({ ...newCriteriaInputs, [reqId]: '' });
+    }
   };
 
   const handleRemoveCriteria = (reqId: string, index: number) => {
@@ -85,8 +112,107 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
     });
   };
 
+  // Phase 3 AI: Expand quick prompt into a complete requirement
+  const handleQuickExpand = async () => {
+    if (!quickPrompt.trim()) return;
+    setIsExpanding(true);
+
+    const res = await expandRequirementAction({
+      prompt: quickPrompt.trim(),
+      archetype: archetype as any,
+      existingCount: data.requirements.length,
+    });
+
+    setIsExpanding(false);
+
+    if (res.success && res.data) {
+      const nextIdx = data.requirements.length + 1;
+      const newReq: FunctionalRequirement = {
+        id: `FR-${nextIdx}`,
+        title: res.data.title,
+        userStory: res.data.userStory,
+        priority: res.data.priority,
+        category: res.data.category,
+        acceptanceCriteria: res.data.acceptanceCriteria,
+      };
+
+      onChange({
+        requirements: [...data.requirements, newReq],
+      });
+      setQuickPrompt('');
+    }
+  };
+
+  // Phase 3 AI: Analyze ambiguity of a single requirement
+  const handleAnalyzeAmbiguity = async (req: FunctionalRequirement) => {
+    setAnalyzingReqId(req.id);
+    const textToAnalyze = `${req.title}. ${req.userStory}. ${req.acceptanceCriteria.join('. ')}`;
+    const res = await analyzeAmbiguityAction({ text: textToAnalyze });
+    setAnalyzingReqId(null);
+
+    if (res.success && res.data) {
+      setAmbiguityResults({
+        ...ambiguityResults,
+        [req.id]: res.data,
+      });
+    }
+  };
+
+  // Phase 3 AI: Apply suggested revision from ambiguity check
+  const handleApplyRevision = (reqId: string, revision: string) => {
+    handleUpdateRequirement(reqId, {
+      userStory: revision,
+    });
+    // Clear the analysis preview after applying
+    const copy = { ...ambiguityResults };
+    delete copy[reqId];
+    setAmbiguityResults(copy);
+  };
+
+  // Phase 3 AI: Generate Gherkin scenarios and boundary criteria
+  const handleGenerateCriteria = async (req: FunctionalRequirement) => {
+    setGeneratingReqId(req.id);
+    const res = await generateCriteriaAction({
+      title: req.title,
+      userStory: req.userStory,
+      category: req.category,
+      archetype: archetype as any,
+    });
+    setGeneratingReqId(null);
+
+    if (res.success && res.data) {
+      setGeneratedCriteria({
+        ...generatedCriteria,
+        [req.id]: res.data,
+      });
+    }
+  };
+
+  // Phase 3 AI: Append all generated criteria into requirement
+  const handleAdoptAllGeneratedCriteria = (reqId: string) => {
+    const gen = generatedCriteria[reqId];
+    if (!gen) return;
+
+    const req = data.requirements.find((r) => r.id === reqId);
+    if (!req) return;
+
+    const newCriteria = [
+      ...req.acceptanceCriteria,
+      ...gen.acceptanceCriteria.filter((c) => !req.acceptanceCriteria.includes(c)),
+    ];
+
+    handleUpdateRequirement(reqId, {
+      acceptanceCriteria: newCriteria,
+    });
+
+    const copy = { ...generatedCriteria };
+    delete copy[reqId];
+    setGeneratedCriteria(copy);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Stage Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -94,7 +220,7 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
             Stage 3: Functional Requirements &amp; Acceptance Criteria
           </h2>
           <p className="text-xs md:text-sm text-slate-400 mt-1">
-            Specify testable system behaviors. Each requirement requires user stories and explicit Given-When-Then or bulleted acceptance criteria.
+            Specify testable system behaviors. Use AI Elicitation tools below to eliminate ambiguity and generate formal Gherkin scenarios.
           </p>
         </div>
 
@@ -102,17 +228,66 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
           type="button"
           size="sm"
           onClick={() => handleAddRequirement()}
-          className="bg-blue-600 hover:bg-blue-700 text-xs"
+          className="bg-blue-600 hover:bg-blue-700 text-xs shrink-0"
         >
           <Plus className="w-3.5 h-3.5 mr-1" />
           Add Requirement
         </Button>
       </div>
 
+      {/* AI Quick Requirement Synthesizer */}
+      <Card className="border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-900/60 shadow-md">
+        <CardContent className="p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <span className="text-xs font-bold text-indigo-200">
+              AI Requirement Elicitation Synthesizer
+            </span>
+            <Badge variant="outline" className="text-[9px] text-indigo-400 border-indigo-500/40">
+              Phase 3 Assistant
+            </Badge>
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Type a high-level feature concept. The AI engine will expand it into a fully articulated user story, priority level, and acceptance criteria.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <Input
+              value={quickPrompt}
+              onChange={(e) => setQuickPrompt(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleQuickExpand())}
+              placeholder="e.g. Real-time webhook notifications with cryptographic HMAC signatures..."
+              className="bg-slate-950/80 border-slate-800 text-xs text-white"
+            />
+            <Button
+              type="button"
+              size="sm"
+              disabled={isExpanding || !quickPrompt.trim()}
+              onClick={handleQuickExpand}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs whitespace-nowrap shrink-0"
+            >
+              {isExpanding ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Expanding...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 mr-1" /> AI Expand Requirement
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Requirements List */}
       <div className="space-y-5">
-        {data.requirements.map((req, index) => {
+        {data.requirements.map((req) => {
           const priorityInfo = PRIORITY_BADGES[req.priority] || PRIORITY_BADGES.P1;
+          const ambiguity = ambiguityResults[req.id];
+          const criteriaGen = generatedCriteria[req.id];
+          const isAnalyzing = analyzingReqId === req.id;
+          const isGenerating = generatingReqId === req.id;
 
           return (
             <Card
@@ -144,6 +319,7 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
                   )}
                 </div>
 
+                {/* Form Fields: Title, Priority, Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs text-slate-400">Requirement Title</Label>
@@ -186,6 +362,7 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
                   </div>
                 </div>
 
+                {/* User Story */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-400">
                     User Story (Format: As a [role], I want [feature], so that [outcome])
@@ -197,6 +374,214 @@ export function Step3Functional({ data, onChange }: Step3FunctionalProps) {
                     className="w-full rounded-md border border-slate-800 bg-slate-950 p-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
+
+                {/* AI Action Toolbar for this requirement */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isAnalyzing}
+                    onClick={() => handleAnalyzeAmbiguity(req)}
+                    className="border-indigo-500/40 text-indigo-300 hover:bg-indigo-950/40 text-xs h-7"
+                  >
+                    {isAnalyzing ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <SearchCode className="w-3 h-3 mr-1 text-indigo-400" />
+                    )}
+                    AI Clarity &amp; Ambiguity Check
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isGenerating}
+                    onClick={() => handleGenerateCriteria(req)}
+                    className="border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/40 text-xs h-7"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <BookOpenCheck className="w-3 h-3 mr-1 text-emerald-400" />
+                    )}
+                    AI Generate Gherkin Criteria
+                  </Button>
+                </div>
+
+                {/* Ambiguity Analysis Results Drawer */}
+                {ambiguity && (
+                  <div className="p-3.5 rounded-lg border border-indigo-500/30 bg-indigo-950/30 space-y-2.5 text-xs animate-fade-in">
+                    <div className="flex items-center justify-between pb-1 border-b border-indigo-900/40">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                          Clarity Evaluation
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={
+                            ambiguity.clarityScore >= 85
+                              ? 'text-emerald-400 border-emerald-500/40'
+                              : ambiguity.clarityScore >= 60
+                              ? 'text-amber-400 border-amber-500/40'
+                              : 'text-rose-400 border-rose-500/40'
+                          }
+                        >
+                          Score: {ambiguity.clarityScore}/100 ({ambiguity.ambiguityLevel} Ambiguity)
+                        </Badge>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const copy = { ...ambiguityResults };
+                          delete copy[req.id];
+                          setAmbiguityResults(copy);
+                        }}
+                        className="h-6 w-6 p-0 text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+
+                    <p className="text-slate-300 text-[11px]">{ambiguity.summary}</p>
+
+                    {/* Flagged issues */}
+                    {ambiguity.issues.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">
+                          Flagged Subjective Terms / Gaps:
+                        </div>
+                        {ambiguity.issues.map((iss) => (
+                          <div
+                            key={iss.id}
+                            className="flex items-start gap-2 p-1.5 rounded bg-slate-950/60 border border-slate-800 text-[11px]"
+                          >
+                            <AlertTriangle
+                              className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                                iss.severity === 'critical'
+                                  ? 'text-rose-400'
+                                  : iss.severity === 'warning'
+                                  ? 'text-amber-400'
+                                  : 'text-blue-400'
+                              }`}
+                            />
+                            <div>
+                              <strong className="text-white">&ldquo;{iss.term}&rdquo;</strong>: {iss.message}{' '}
+                              {iss.suggestedReplacement && (
+                                <span className="text-emerald-400">
+                                  &rarr; Suggested: {iss.suggestedReplacement}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Clarifying Questions */}
+                    {ambiguity.clarifyingQuestions.length > 0 && (
+                      <div className="space-y-1 pt-1">
+                        <div className="text-[10px] uppercase font-bold text-indigo-300">
+                          Clarifying Questions to Resolve Ambiguity:
+                        </div>
+                        <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-slate-300">
+                          {ambiguity.clarifyingQuestions.map((q, qi) => (
+                            <li key={qi}>{q}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Suggested Revision Action */}
+                    <div className="flex items-center justify-between pt-2 border-t border-indigo-900/40">
+                      <span className="text-[11px] text-slate-400 truncate max-w-sm">
+                        Suggested: {ambiguity.suggestedRevision}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleApplyRevision(req.id, ambiguity.suggestedRevision)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-6 px-2.5"
+                      >
+                        Apply AI Refinement
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Gherkin Scenarios Drawer */}
+                {criteriaGen && (
+                  <div className="p-3.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 space-y-2.5 text-xs animate-fade-in">
+                    <div className="flex items-center justify-between pb-1 border-b border-emerald-900/40">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          <BookOpenCheck className="w-4 h-4 text-emerald-400" />
+                          Generated Gherkin Scenarios &amp; Criteria
+                        </span>
+                        <Badge variant="outline" className="text-emerald-400 border-emerald-500/40">
+                          {criteriaGen.gherkinScenarios.length} Scenarios
+                        </Badge>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const copy = { ...generatedCriteria };
+                          delete copy[req.id];
+                          setGeneratedCriteria(copy);
+                        }}
+                        className="h-6 w-6 p-0 text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {criteriaGen.gherkinScenarios.map((sc, si) => (
+                        <div
+                          key={si}
+                          className="p-2.5 rounded bg-slate-950/70 border border-slate-800 text-[11px] space-y-1"
+                        >
+                          <div className="font-semibold text-emerald-300 flex items-center justify-between">
+                            <span>Scenario: {sc.title}</span>
+                            <Badge variant="secondary" className="text-[9px] uppercase">
+                              {sc.type}
+                            </Badge>
+                          </div>
+                          <div className="text-slate-300 font-mono text-[10px] space-y-0.5">
+                            <div><strong className="text-blue-400">Given</strong> {sc.given}</div>
+                            <div><strong className="text-purple-400">When</strong> {sc.when}</div>
+                            <div><strong className="text-emerald-400">Then</strong> {sc.then}</div>
+                            {sc.and && sc.and.map((a, ai) => (
+                              <div key={ai}><strong className="text-slate-400">And</strong> {a}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-emerald-900/40">
+                      <span className="text-[11px] text-slate-400">
+                        {criteriaGen.acceptanceCriteria.length} acceptance criteria ready to merge
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleAdoptAllGeneratedCriteria(req.id)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-6 px-3"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Append to Criteria Checklist
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Acceptance Criteria Sub-List */}
                 <div className="p-3.5 rounded-lg border border-slate-800/80 bg-slate-950/50 space-y-2.5">

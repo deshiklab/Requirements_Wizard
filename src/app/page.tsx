@@ -16,6 +16,9 @@ import {
   ArrowRight,
   ExternalLink,
   PlusCircle,
+  BrainCircuit,
+  SearchCode,
+  BookOpenCheck,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -54,24 +57,24 @@ export default async function Home() {
       id: "phase-2",
       name: "Phase 2: Multi-Stage Wizard & Logic Engine",
       description: "Dynamic multi-step form engine with real-time conditional logic, archetype rules, autosave, and readiness scoring.",
+      status: "COMPLETED",
+      badgeVariant: "success" as const,
+      isCurrent: false,
+    },
+    {
+      id: "phase-3",
+      name: "Phase 3: AI-Assisted Requirements Elicitation",
+      description: "Ambiguity scoring, Gherkin scenario generator, context document ingestion, and proactive elicitation copilot.",
       status: "COMPLETED & VERIFIED",
       badgeVariant: "success" as const,
       isCurrent: true,
     },
     {
-      id: "phase-3",
-      name: "Phase 3: AI-Assisted Requirements Elicitation",
-      description: "Dynamic AI prompts, automated ambiguity reduction, functional/NFR decomposition, and acceptance criteria.",
-      status: "AWAITING HUMAN APPROVAL",
-      badgeVariant: "secondary" as const,
-      isCurrent: false,
-    },
-    {
       id: "phase-4",
       name: "Phase 4: Document Generation & Export",
       description: "PRD/SRS compilation, IEEE 830 compliant formatting, PDF/Markdown/JSON schema exports, and audit trails.",
-      status: "BLOCKED ON PHASE 3",
-      badgeVariant: "outline" as const,
+      status: "AWAITING APPROVAL",
+      badgeVariant: "secondary" as const,
       isCurrent: false,
     },
   ];
@@ -83,25 +86,28 @@ export default async function Home() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <Badge variant="outline" className="text-xs uppercase tracking-wider text-emerald-400 border-emerald-500/30">
+              <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+              <Badge variant="outline" className="text-xs uppercase tracking-wider text-indigo-400 border-indigo-500/30">
                 SDAD Execution Framework
               </Badge>
               <Badge variant="secondary" className="text-xs">
                 Next.js 14 App Router
               </Badge>
+              <Badge variant="outline" className="text-xs text-purple-400 border-purple-500/30">
+                Phase 3 Engine Active
+              </Badge>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-              <Workflow className="w-9 h-9 text-blue-500" />
+              <Workflow className="w-9 h-9 text-indigo-500" />
               Requirements Wizard
             </h1>
             <p className="text-sm md:text-base text-slate-400 mt-1 max-w-2xl">
-              An AI-driven software requirements elicitation platform built under the Spec-Driven Agentic Development (SDAD) methodology.
+              An AI-assisted software requirements elicitation platform engineered under the Spec-Driven Agentic Development (SDAD) methodology.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Link href="/wizard">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2.5 h-auto flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 h-auto flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
                 <PlusCircle className="w-4 h-4" />
                 Launch Requirements Wizard
                 <ArrowRight className="w-4 h-4 ml-0.5" />
@@ -144,13 +150,13 @@ export default async function Home() {
           <Card className="bg-slate-900/60 border-slate-800/80 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                File References
+                Context Documents
               </CardTitle>
               <FileCode2 className="w-4 h-4 text-purple-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{fileCount}</div>
-              <p className="text-xs text-slate-400 mt-1">Uploaded context documents</p>
+              <p className="text-xs text-slate-400 mt-1">Uploaded &amp; AI-Ingested</p>
             </CardContent>
           </Card>
 
@@ -174,15 +180,15 @@ export default async function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-blue-400" />
+                  <Cpu className="w-5 h-5 text-indigo-400" />
                   SDAD Directed Acyclic Graph (DAG) Progress
                 </CardTitle>
                 <CardDescription className="text-slate-400">
                   Strict step-by-step gate architecture. Each phase requires automated test proof and human sign-off before downstream dependency execution.
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="border-emerald-500/40 text-emerald-400">
-                Phase 2 Verified
+              <Badge variant="outline" className="border-indigo-500/40 text-indigo-400">
+                Phase 3 Verified
               </Badge>
             </div>
           </CardHeader>
@@ -193,7 +199,7 @@ export default async function Home() {
                   key={phase.id}
                   className={`p-4 rounded-lg border transition-all ${
                     phase.isCurrent
-                      ? "bg-emerald-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
+                      ? "bg-indigo-950/20 border-indigo-500/40 shadow-sm shadow-indigo-500/10"
                       : phase.status === "COMPLETED"
                       ? "bg-slate-950/50 border-emerald-500/20"
                       : "bg-slate-950/40 border-slate-800/80"
@@ -224,7 +230,7 @@ export default async function Home() {
                     Persisted Form Drafts in PostgreSQL
                   </CardTitle>
                   <CardDescription className="text-slate-400 text-xs">
-                    Resume an active specification or inspect its live JSONB state.
+                    Resume an active specification or test AI-driven elicitation in real time.
                   </CardDescription>
                 </div>
                 <Link href="/wizard">
@@ -244,7 +250,7 @@ export default async function Home() {
                     <div className="min-w-0">
                       <div className="font-semibold text-sm text-white truncate">{draft.title}</div>
                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-blue-400">Step {draft.currentStep}/6</span>
+                        <span className="font-mono text-indigo-400">Step {draft.currentStep}/6</span>
                         <span>&bull;</span>
                         <Badge variant="secondary" className="text-[9px] uppercase">
                           {draft.status}
@@ -256,7 +262,7 @@ export default async function Home() {
                       </div>
                     </div>
                     <Link href={`/wizard/${draft.id}`}>
-                      <Button size="sm" variant="ghost" className="h-8 text-xs text-blue-400 hover:text-white">
+                      <Button size="sm" variant="ghost" className="h-8 text-xs text-indigo-400 hover:text-white">
                         Resume <ExternalLink className="w-3 h-3 ml-1" />
                       </Button>
                     </Link>
@@ -267,37 +273,47 @@ export default async function Home() {
           </Card>
         )}
 
-        {/* Schema Architecture & Engine Capabilities */}
+        {/* Phase 3 AI Engine Architecture Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Phase 2 Frontend Architecture */}
+          {/* Phase 3 Capabilities */}
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <Server className="w-4 h-4 text-blue-400" />
-                Phase 2: Multi-Stage Wizard Engine Architecture
+                <BrainCircuit className="w-4 h-4 text-indigo-400" />
+                Phase 3: AI Elicitation Engine Capabilities
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Features 6 interactive stages with real-time state persistence to PostgreSQL.
+                Advanced requirements refinement, automated disambiguation, and context ingestion.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 text-xs text-slate-300">
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-blue-400">Stage 1: Scope &amp; Archetype</span> &bull; Web, Mobile, API, SaaS, AI-Agentic archetype selectors with conditional parameters.
+                <span className="font-bold text-indigo-400 flex items-center gap-1.5 mb-1">
+                  <SearchCode className="w-3.5 h-3.5" />
+                  Ambiguity Detection &amp; Clarity Scoring (0-100)
+                </span>
+                Flag subjective adjectives (&quot;fast&quot;, &quot;user-friendly&quot;, &quot;scalable&quot;), weak modals, and passive voice, providing quantitative SLA revisions and clarifying questions.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-emerald-400">Stage 2: Personas &amp; Actors</span> &bull; Dynamic persona cards with goals, pain points, and RBAC tiers.
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                  <BookOpenCheck className="w-3.5 h-3.5" />
+                  Gherkin Acceptance Criteria Generation
+                </span>
+                Generates formal Given-When-Then scenarios, boundary conditions, rate-limiting guards, and security criteria per requirement.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-400">Stage 3: Functional Requirements</span> &bull; P0/P1/P2 priorities, user story formula, testable acceptance criteria lists.
+                <span className="font-bold text-purple-400 flex items-center gap-1.5 mb-1">
+                  <FileCode2 className="w-3.5 h-3.5" />
+                  Context Document Ingestion
+                </span>
+                Parses uploaded diagrams, PRDs, and schemas, automatically extracting functional requirements, stakeholder personas, and technical constraints into PostgreSQL drafts.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-purple-400">Stage 4: NFRs &amp; Quality Attributes</span> &bull; Latency targets, uptime SLAs, HIPAA/GDPR/SOC2 compliance checks.
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-indigo-400">Stage 5: Tech Stack &amp; Context Files</span> &bull; Framework selector, third-party integrations, diagram upload references.
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-rose-400">Stage 6: Review &amp; Readiness</span> &bull; Quantitative Spec Readiness Score (0-100) and live JSONB inspector.
+                <span className="font-bold text-amber-400 flex items-center gap-1.5 mb-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Proactive Elicitation Copilot
+                </span>
+                Analyzes draft gaps based on archetype (AI Agentic, Enterprise SaaS, Mobile) and surfaces drill-down architectural options with 1-click spec adoption.
               </div>
             </CardContent>
           </Card>
@@ -307,30 +323,24 @@ export default async function Home() {
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-400" />
-                Conditional Logic Rules Engine (`src/lib/conditional-logic`)
+                Deterministic Validation &amp; Verification Rules
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Deterministic cross-field evaluation without external API latency.
+                Dual-tier verification: deterministic local engine + isolated Next.js Server Actions.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 text-xs text-slate-300">
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-300">Rule 1 (Mobile Archetype):</span> Surfaces offline sync, APNs/FCM push notifications, and App Store review constraints.
+                <span className="font-bold text-amber-300">Offline-Capable Heuristics:</span> Deterministic NLP analysis runs locally with zero external network failure dependencies.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-300">Rule 2 (Enterprise SaaS):</span> Enforces multi-tenancy models (Shared vs DB-per-tenant) and SAML 2.0 / Okta SSO.
+                <span className="font-bold text-rose-400">Zod Contract Safety:</span> All AI actions strictly guarded with Zod runtime schemas before state mutations.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-rose-400">Rule 3 (HIPAA Guardrail):</span> Detects HIPAA selection and mandates AES-256 encryption-at-rest with audit trail.
+                <span className="font-bold text-blue-400">PostgreSQL JSONB Mutations:</span> Direct merge and state persistence for elicited requirements and personas.
               </div>
               <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-blue-400">Rule 4 (Scale &amp; Concurrency):</span> Detects &gt;2500 users / &gt;300 RPS and recommends distributed Redis cache.
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-emerald-400">Rule 5 (High Availability SLA):</span> Cross-checks 99.99% uptime against RTO targets (&le; 15 min requirement).
-              </div>
-              <div className="p-2 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-indigo-400">Rule 6 (AI Agent Guardrails):</span> Injects structured output validation and human-in-the-loop policies.
+                <span className="font-bold text-emerald-400">IEEE 830 Compliance Preparation:</span> Formats functional specifications to standard user story and Gherkin definitions of done.
               </div>
             </CardContent>
           </Card>
@@ -339,9 +349,9 @@ export default async function Home() {
         {/* Footer info */}
         <div className="text-center text-xs text-slate-500 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>SDAD Engine v1.0.0 &bull; deshiklab/Requirements_Wizard</span>
-          <span className="flex items-center gap-1.5 text-emerald-400">
-            <Sparkles className="w-3.5 h-3.5" />
-            Phase 2 Complete &bull; Awaiting Human Sign-off for Phase 3
+          <span className="flex items-center gap-1.5 text-indigo-400">
+            <BrainCircuit className="w-3.5 h-3.5" />
+            Phase 3 AI Elicitation Engine Operational &bull; Awaiting Human Review
           </span>
         </div>
       </div>

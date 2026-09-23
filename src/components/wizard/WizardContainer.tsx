@@ -18,6 +18,7 @@ import { evaluateConditionalLogic } from '@/lib/conditional-logic/engine';
 import { saveDraftAction, attachFileReferenceAction } from '@/actions/drafts';
 import { StepIndicator } from './StepIndicator';
 import { ConditionalGuidanceCard } from './ConditionalGuidanceCard';
+import { AiElicitationPanel } from './AiElicitationPanel';
 import { Step1Identity } from './Step1Identity';
 import { Step2Personas } from './Step2Personas';
 import { Step3Functional } from './Step3Functional';
@@ -26,6 +27,7 @@ import { Step5TechContext } from './Step5TechContext';
 import { Step6Review } from './Step6Review';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DocumentIngestionResult } from '@/lib/ai/types';
 import {
   Save,
   ArrowLeft,
@@ -154,7 +156,7 @@ export function WizardContainer({
     } else {
       // Step 6 finalize
       await saveCurrentDraft(6, 'review');
-      setSaveStatusMessage('Specification submitted for Phase 3 Review!');
+      setSaveStatusMessage('Specification submitted for Phase 4 PRD Export!');
     }
   };
 
@@ -176,12 +178,13 @@ export function WizardContainer({
     // Check if requirement already exists
     const exists = formData.step3_functional.requirements.some((r) => r.title === req.title);
     if (!exists) {
-      setFormData({
+      const updated = {
         ...formData,
         step3_functional: {
           requirements: [...formData.step3_functional.requirements, req],
         },
-      });
+      };
+      setFormData(updated);
       setSaveStatusMessage(`Applied recommended requirement: "${req.title}"`);
       setTimeout(() => setSaveStatusMessage(''), 3000);
     }
@@ -204,12 +207,63 @@ export function WizardContainer({
     }
   };
 
+  // Phase 3: Merges ingested context items (requirements, personas, stack) into draft
+  const handleMergeExtractedContext = async (result: DocumentIngestionResult) => {
+    const existingReqTitles = new Set(
+      formData.step3_functional.requirements.map((r) => r.title.toLowerCase())
+    );
+    const newReqs = result.extractedRequirements.filter(
+      (r) => !existingReqTitles.has(r.title.toLowerCase())
+    );
+
+    const existingPersonaNames = new Set(
+      formData.step2_personas.personas.map((p) => p.name.toLowerCase())
+    );
+    const newPersonas = result.extractedPersonas.filter(
+      (p) => !existingPersonaNames.has(p.name.toLowerCase())
+    );
+
+    const updatedFormData: WizardFormData = {
+      ...formData,
+      step2_personas: {
+        personas: [...formData.step2_personas.personas, ...newPersonas],
+      },
+      step3_functional: {
+        requirements: [...formData.step3_functional.requirements, ...newReqs],
+      },
+      step5_tech_and_context: {
+        ...formData.step5_tech_and_context,
+        preferredStack: {
+          ...formData.step5_tech_and_context.preferredStack,
+          ...(result.suggestedStack || {}),
+        },
+      },
+    };
+
+    setFormData(updatedFormData);
+    setSaveStatusMessage(
+      `Merged ${newReqs.length} requirements and ${newPersonas.length} personas from "${result.fileName}"`
+    );
+
+    // Persist immediately to PostgreSQL
+    if (draftId) {
+      await saveDraftAction({
+        id: draftId,
+        userId: initialUserId,
+        title: draftTitle,
+        currentStep,
+        status: (formData.step6_review.status || 'in_progress') as any,
+        data: updatedFormData,
+      });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Top Header & Autosave Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
             <Workflow className="w-5 h-5" />
           </div>
           <div>
@@ -217,14 +271,14 @@ export function WizardContainer({
               <span className="text-xs font-mono text-slate-400">
                 Draft ID: {draftId ? `${draftId.slice(0, 8)}...` : 'Unsaved Draft'}
               </span>
-              <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
-                Phase 2 Engine Active
+              <Badge variant="outline" className="text-[10px] text-indigo-400 border-indigo-500/30">
+                Phase 3 AI Elicitation Active
               </Badge>
             </div>
             <input
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
-              className="text-base md:text-lg font-bold text-white bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-none transition-colors"
+              className="text-base md:text-lg font-bold text-white bg-transparent border-b border-transparent hover:border-slate-700 focus:border-indigo-500 focus:outline-none transition-colors"
               placeholder="Draft Specification Title"
             />
           </div>
@@ -269,7 +323,7 @@ export function WizardContainer({
         onStepClick={handleStepJump}
       />
 
-      {/* Main Grid: Step Content + Conditional Guidance Panel */}
+      {/* Main Grid: Step Content + Conditional Guidance & AI Elicitation Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Step Form (3 cols) */}
         <div className="lg:col-span-3 p-6 rounded-xl border border-slate-800 bg-slate-900/40 backdrop-blur">
@@ -294,6 +348,7 @@ export function WizardContainer({
               onChange={(d: Step3FunctionalData) =>
                 setFormData({ ...formData, step3_functional: d })
               }
+              archetype={formData.step1_identity.projectType}
             />
           )}
 
@@ -313,6 +368,7 @@ export function WizardContainer({
                 setFormData({ ...formData, step5_tech_and_context: d })
               }
               onAttachFile={handleAttachFile}
+              onMergeExtractedContext={handleMergeExtractedContext}
             />
           )}
 
@@ -352,7 +408,7 @@ export function WizardContainer({
                 type="button"
                 onClick={handleNextStep}
                 disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-5"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-5"
               >
                 {currentStep === 6 ? (
                   <>
@@ -368,8 +424,14 @@ export function WizardContainer({
           </div>
         </div>
 
-        {/* Dynamic Conditional Guidance Panel (1 col) */}
+        {/* Dynamic AI Copilot & Conditional Guidance (1 col) */}
         <div className="lg:col-span-1 space-y-4">
+          <AiElicitationPanel
+            formData={formData}
+            activeStep={currentStep}
+            onApplyRequirement={handleApplyRecommendedRequirement}
+          />
+
           <ConditionalGuidanceCard
             evaluation={evaluation}
             onApplyRequirement={handleApplyRecommendedRequirement}
