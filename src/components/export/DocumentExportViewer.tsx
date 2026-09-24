@@ -10,6 +10,7 @@ import { WizardFormData } from '@/types/wizard';
 import { GeneratedDocumentResult, ExportFormat } from '@/lib/export/types';
 import { GovernanceBar } from '@/components/governance/GovernanceBar';
 import { AuditTrailViewer } from '@/components/governance/AuditTrailViewer';
+import { MermaidViewer } from '@/components/diagrams/MermaidViewer';
 import { DraftStatus, UserRole } from '@/lib/governance/types';
 import {
   FileText,
@@ -24,6 +25,7 @@ import {
   Sparkles,
   ShieldCheck,
   Shield,
+  Layers,
   ExternalLink,
 } from 'lucide-react';
 
@@ -48,7 +50,7 @@ export function DocumentExportViewer({
   status = 'approved',
   userId = 'system',
 }: DocumentExportViewerProps) {
-  const [activeTab, setActiveTab] = useState<'rendered' | 'markdown' | 'json' | 'audit'>('rendered');
+  const [activeTab, setActiveTab] = useState<'rendered' | 'diagrams' | 'markdown' | 'json' | 'audit'>('rendered');
   const [copied, setCopied] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<DraftStatus>((status as DraftStatus) || 'approved');
   const [currentRole, setCurrentRole] = useState<UserRole>('lead_architect');
@@ -210,6 +212,9 @@ export function DocumentExportViewer({
           <TabsList className="bg-slate-900 border border-slate-800">
             <TabsTrigger value="rendered" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
               <BookOpen className="w-3.5 h-3.5" /> Executive Document View
+            </TabsTrigger>
+            <TabsTrigger value="diagrams" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+              <Layers className="w-3.5 h-3.5" /> Architecture Diagrams
             </TabsTrigger>
             <TabsTrigger value="markdown" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <FileText className="w-3.5 h-3.5" /> IEEE 830 Markdown
@@ -470,7 +475,12 @@ export function DocumentExportViewer({
           </Card>
         </TabsContent>
 
-        {/* Tab 2: Raw IEEE 830 Markdown View */}
+        {/* Tab 2: Automated Architecture Diagrams (Mermaid.js) */}
+        <TabsContent value="diagrams" className="mt-4">
+          <MermaidViewer formData={formData} />
+        </TabsContent>
+
+        {/* Tab 3: Raw IEEE 830 Markdown View */}
         <TabsContent value="markdown" className="mt-4">
           <Card className="bg-slate-900/60 border-slate-800">
             <CardContent className="p-5">

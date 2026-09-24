@@ -424,6 +424,7 @@ export function WizardContainer({
               }
               onAttachFile={handleAttachFile}
               onMergeExtractedContext={handleMergeExtractedContext}
+              formData={formData}
             />
           )}
 

@@ -4,9 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Step5TechAndContextData, IntegrationItem, AttachmentRef } from '@/types/wizard';
+import { Step5TechAndContextData, IntegrationItem, AttachmentRef, WizardFormData } from '@/types/wizard';
 import { ingestDocumentContextAction } from '@/actions/ai';
 import { DocumentIngestionResult } from '@/lib/ai/types';
+import { MermaidViewer } from '@/components/diagrams/MermaidViewer';
 import {
   Boxes,
   Plus,
@@ -29,6 +30,7 @@ interface Step5TechContextProps {
   onChange: (data: Step5TechAndContextData) => void;
   onAttachFile?: (file: AttachmentRef) => void;
   onMergeExtractedContext?: (result: DocumentIngestionResult) => void;
+  formData?: WizardFormData;
 }
 
 export function Step5TechContext({
@@ -36,6 +38,7 @@ export function Step5TechContext({
   onChange,
   onAttachFile,
   onMergeExtractedContext,
+  formData,
 }: Step5TechContextProps) {
   const [newServiceName, setNewServiceName] = useState('');
   const [newServiceType, setNewServiceType] = useState('');
@@ -488,6 +491,13 @@ export function Step5TechContext({
           </div>
         </CardContent>
       </Card>
+
+      {/* Real-time Architecture Diagram Preview */}
+      {formData && (
+        <div className="pt-2">
+          <MermaidViewer formData={formData} initialType="c4_container" />
+        </div>
+      )}
     </div>
   );
 }

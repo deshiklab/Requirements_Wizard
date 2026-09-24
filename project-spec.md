@@ -2,7 +2,7 @@
 **Framework:** Spec-Driven Agentic Development (SDAD)  
 **Repository:** `deshiklab/Requirements_Wizard`  
 **Target Platform:** Next.js 14 (App Router) + PostgreSQL + Prisma ORM + Tailwind CSS / Shadcn UI  
-**Document Status:** Formal Specification & Architecture Contract (v1.4.0)
+**Document Status:** Formal Specification & Architecture Contract (v1.5.0)
 
 ---
 
@@ -201,15 +201,27 @@ All data mutations, governance workflows, and export pipelines operate through i
 
 ---
 
-## 7. Cumulative Test Verification Protocol
+## 7. Architecture Diagram Engine (Mermaid.js)
 
-The automated test suite verifies all five phases across 255 assertions with zero failures:
+The platform compiles formal specifications into four distinct automated Mermaid.js architectural models:
+1. **C4 System Container Diagram (`graph TD`):** Models client tiers (Web, Mobile, API), Next.js 14 App Router presentation layer, isolated Server Action gateways, PostgreSQL 18 & Redis storage topologies, and external third-party services (e.g. Stripe, Twilio, SendGrid).
+2. **Primary Workflow Sequence Execution (`sequenceDiagram`):** Synthesizes end-to-end execution flows with step numbering, Zod schema validation guards, database JSONB mutations, and cryptographic audit logging.
+3. **Domain & Database Entity-Relationship Model (`erDiagram`):** Models relational schemas connecting `USER`, `FORM_DRAFT`, `FILE_REFERENCE`, and `AUDIT_LOG` with strict referential integrity and attribute types.
+4. **Specification Lifecycle State Machine (`stateDiagram-v2`):** Visualizes governance transitions (`Draft` &rarr; `InReview` &rarr; `Approved` &rarr; `Locked` &rarr; `Reopened`) and strict immutability barriers.
+5. **Native Document Integration:** Embeds ````mermaid` syntax blocks directly into Section 2, Section 3, Section 4, and Section 6 of generated IEEE 830 Markdown documents for automatic rendering on GitHub, GitLab, and Obsidian.
+6. **Interactive Visualizer (`MermaidViewer.tsx`):** Provides interactive rendering, SVG export, raw syntax inspection, and one-click clipboard copying in both the wizard editor and the document export viewer.
+
+---
+
+## 8. Cumulative Test Verification Protocol
+
+The automated test suite verifies all system capabilities across 303 assertions with zero failures:
 
 1. **`test:phase1` (22 checks):** PostgreSQL connection, JSONB deep mutations, FileReference relations, Server Action boundary isolation, and Zod rejection.
 2. **`test:phase2` (44 checks):** Conditional logic engine, archetype field surfacing, HIPAA/SLA constraint guards, readiness scoring (0-100), and multi-stage draft persistence.
 3. **`test:phase3` (52 checks):** Ambiguity detection, clarity scoring, Gherkin scenario generation, document context ingestion, proactive elicitation questions, Server Action execution, and PostgreSQL draft augmentation.
 4. **`test:phase4` (58 checks):** IEEE 830 Markdown compilation, structured JSON schema export, printable HTML/PDF generation, Server Action execution (`exportDocumentAction`, `exportDirectDocumentAction`), and end-to-end database assembly.
 5. **`test:phase5` (79 checks):** RBAC permissions matrix, field-level semantic diff engine, PostgreSQL audit trail recording and queries, review submission threshold guards, Lead Architect sign-off, cryptographic SHA-256 draft locking, strict immutability enforcement, audited reopening, snapshot revision rollback, and Admin role management.
-6. **Total Assertions:** **255 / 255 passing assertions (100% pass rate).**
-7. **Next.js Production Build:** Clean compilation with 0 errors across static and dynamic App Router routes (`/`, `/wizard`, `/wizard/[id]`, `/wizard/[id]/export`).
-6. **Next.js Production Build:** Clean compilation with 0 errors across static and dynamic App Router routes (`/`, `/wizard`, `/wizard/[id]`, `/wizard/[id]/export`).
+6. **`test:diagrams` (48 checks):** Automated Mermaid.js C4 container compilation, workflow sequence generation, ER data model, governance state machine, and IEEE 830 Markdown diagram embedding.
+7. **Total Assertions:** **303 / 303 passing assertions (100% pass rate).**
+8. **Next.js Production Build:** Clean compilation with 0 errors across static and dynamic App Router routes (`/`, `/wizard`, `/wizard/[id]`, `/wizard/[id]/export`).

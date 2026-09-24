@@ -1,6 +1,12 @@
 import { WizardFormData } from '@/types/wizard';
 import { DocumentExportOptions } from './types';
 import { generateAcceptanceCriteria } from '@/lib/ai/criteria-generator';
+import {
+  generateC4ContainerDiagram,
+  generateWorkflowSequenceDiagram,
+  generateErDiagram,
+  generateGovernanceStateDiagram,
+} from '@/lib/diagrams/mermaid';
 
 export function generateIeee830Markdown(
   data: WizardFormData,
@@ -172,11 +178,23 @@ export function generateIeee830Markdown(
   lines.push('- **Server Action Isolation:** State mutations SHALL execute via Next.js Server Actions with zero unauthorized client-side direct access.');
   lines.push('- **Deterministic Testing:** Downstream development SHALL NOT commence until automated unit and integration tests pass with 100% success.');
   lines.push('');
+
+  lines.push('### 2.5 System Container Architecture (C4 Model)');
+  lines.push('```mermaid');
+  lines.push(generateC4ContainerDiagram(data).syntax);
+  lines.push('```');
+  lines.push('');
   lines.push('---');
   lines.push('');
 
   // 3. System Features & Functional Requirements
   lines.push('## 3. System Features & Functional Requirements');
+  lines.push('');
+
+  lines.push('### 3.0 Primary Workflow Execution Sequence');
+  lines.push('```mermaid');
+  lines.push(generateWorkflowSequenceDiagram(data).syntax);
+  lines.push('```');
   lines.push('');
 
   data.step3_functional.requirements.forEach((req, idx) => {
@@ -250,6 +268,12 @@ export function generateIeee830Markdown(
   lines.push('- **API Transport:** HTTP/2 with RESTful JSON payloads or GraphQL endpoints.');
   lines.push('- **Authentication Tokens:** Signed JWT access tokens with HttpOnly, Secure, and SameSite=Strict cookies.');
   lines.push('');
+
+  lines.push('### 4.3 Database & Domain Entity-Relationship Model');
+  lines.push('```mermaid');
+  lines.push(generateErDiagram(data).syntax);
+  lines.push('```');
+  lines.push('');
   lines.push('---');
   lines.push('');
 
@@ -303,6 +327,12 @@ export function generateIeee830Markdown(
     lines.push(`> ${data.step6_review.finalNotes}`);
     lines.push('');
   }
+  lines.push('');
+
+  lines.push('### 6.3 Specification Lifecycle State Machine');
+  lines.push('```mermaid');
+  lines.push(generateGovernanceStateDiagram().syntax);
+  lines.push('```');
   lines.push('');
   lines.push('```');
   lines.push('========================================================================');
