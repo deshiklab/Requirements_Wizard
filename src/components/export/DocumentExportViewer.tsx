@@ -8,6 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WizardFormData } from '@/types/wizard';
 import { GeneratedDocumentResult, ExportFormat } from '@/lib/export/types';
+import { GovernanceBar } from '@/components/governance/GovernanceBar';
+import { AuditTrailViewer } from '@/components/governance/AuditTrailViewer';
+import { DraftStatus, UserRole } from '@/lib/governance/types';
 import {
   FileText,
   Download,
@@ -20,6 +23,7 @@ import {
   BookOpen,
   Sparkles,
   ShieldCheck,
+  Shield,
   ExternalLink,
 } from 'lucide-react';
 
@@ -30,6 +34,8 @@ interface DocumentExportViewerProps {
   markdownDoc: GeneratedDocumentResult;
   jsonDoc: GeneratedDocumentResult;
   htmlDoc: GeneratedDocumentResult;
+  status?: string;
+  userId?: string;
 }
 
 export function DocumentExportViewer({
@@ -39,9 +45,13 @@ export function DocumentExportViewer({
   markdownDoc,
   jsonDoc,
   htmlDoc,
+  status = 'approved',
+  userId = 'system',
 }: DocumentExportViewerProps) {
-  const [activeTab, setActiveTab] = useState<'rendered' | 'markdown' | 'json'>('rendered');
+  const [activeTab, setActiveTab] = useState<'rendered' | 'markdown' | 'json' | 'audit'>('rendered');
   const [copied, setCopied] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<DraftStatus>((status as DraftStatus) || 'approved');
+  const [currentRole, setCurrentRole] = useState<UserRole>('lead_architect');
 
   const handleCopy = () => {
     let contentToCopy = '';
@@ -181,6 +191,19 @@ export function DocumentExportViewer({
         </div>
       </div>
 
+      {/* SDAD Phase 5 Governance Bar */}
+      <GovernanceBar
+        draftId={draftId}
+        status={currentStatus}
+        currentRole={currentRole}
+        currentUserId={userId}
+        readinessScore={readinessScore}
+        sealedChecksum={(formData as any)?.governance?.sealedChecksum}
+        onRoleChange={(r) => setCurrentRole(r)}
+        onStatusChange={(s) => setCurrentStatus(s)}
+        onOpenAuditTrail={() => setActiveTab('audit')}
+      />
+
       {/* Main Presentation View */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -193,6 +216,9 @@ export function DocumentExportViewer({
             </TabsTrigger>
             <TabsTrigger value="json" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
               <Code2 className="w-3.5 h-3.5" /> Structured JSON Schema
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="text-xs flex items-center gap-1.5 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <Shield className="w-3.5 h-3.5" /> Governance & Audit Trail
             </TabsTrigger>
           </TabsList>
 
@@ -486,6 +512,16 @@ export function DocumentExportViewer({
               </pre>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Tab 4: Governance & Audit Trail */}
+        <TabsContent value="audit" className="mt-4">
+          <AuditTrailViewer
+            draftId={draftId}
+            currentUserRole={currentRole}
+            currentUserId={userId}
+            onRevisionRestored={() => window.location.reload()}
+          />
         </TabsContent>
       </Tabs>
     </div>

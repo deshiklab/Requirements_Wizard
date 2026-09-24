@@ -90,6 +90,24 @@ export async function ensurePostgres(): Promise<void> {
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS "auditLog" (
+      "id" TEXT PRIMARY KEY,
+      "draftId" TEXT NOT NULL REFERENCES "formDraft"("id") ON DELETE CASCADE,
+      "userId" TEXT REFERENCES "user"("id") ON DELETE SET NULL,
+      "userRole" TEXT NOT NULL DEFAULT 'contributor',
+      "action" TEXT NOT NULL,
+      "stage" INTEGER,
+      "summary" TEXT NOT NULL,
+      "diff" JSONB,
+      "snapshot" JSONB,
+      "checksum" TEXT,
+      "metadata" JSONB,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS "idx_auditLog_draftId" ON "auditLog"("draftId");
+    CREATE INDEX IF NOT EXISTS "idx_auditLog_createdAt" ON "auditLog"("createdAt" DESC);
   `);
 
   await client.end();

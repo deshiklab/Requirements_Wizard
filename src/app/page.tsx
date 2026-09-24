@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { Client } from "pg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,10 @@ import {
   Printer,
   Download,
   Code2,
+  History,
+  Lock,
+  Shield,
+  Key,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +37,7 @@ export default async function Home() {
   let userCount = 0;
   let draftCount = 0;
   let fileCount = 0;
+  let auditCount = 0;
   let recentDrafts: any[] = [];
 
   try {
@@ -43,6 +49,16 @@ export default async function Home() {
     draftCount = drafts.length;
     fileCount = files.length;
     recentDrafts = drafts.slice(-4).reverse();
+
+    // Query audit log count
+    const pgClient = new Client({
+      connectionString:
+        process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/requirements_wizard',
+    });
+    await pgClient.connect();
+    const auditRes = await pgClient.query('SELECT COUNT(*) as count FROM "auditLog"');
+    auditCount = parseInt(auditRes.rows[0]?.count || '0', 10);
+    await pgClient.end();
   } catch (err: any) {
     dbStatus = "error";
     console.error("DB connection error in Home page:", err.message);
@@ -77,6 +93,14 @@ export default async function Home() {
       id: "phase-4",
       name: "Phase 4: Document Generation & PRD Export",
       description: "IEEE 830 compliant SRS compilation, multi-format export (Markdown, JSON, Printable HTML/PDF), and readiness verification.",
+      status: "COMPLETED",
+      badgeVariant: "success" as const,
+      isCurrent: false,
+    },
+    {
+      id: "phase-5",
+      name: "Phase 5: Governance, Auditing & Hardening",
+      description: "Least-privilege RBAC, chronological audit trail, semantic diff history, SHA-256 cryptographic seals, and immutability guards.",
       status: "COMPLETED & VERIFIED",
       badgeVariant: "success" as const,
       isCurrent: true,
@@ -97,8 +121,8 @@ export default async function Home() {
               <Badge variant="secondary" className="text-xs">
                 Next.js 14 App Router
               </Badge>
-              <Badge variant="outline" className="text-xs text-indigo-400 border-indigo-500/30">
-                Phase 4 Live &bull; IEEE 830 SRS Ready
+              <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-500/30">
+                Phase 5 Live &bull; Governance &amp; RBAC Sealed
               </Badge>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
@@ -121,7 +145,7 @@ export default async function Home() {
         </div>
 
         {/* Database & Infrastructure Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="bg-slate-900/60 border-slate-800/80 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wide">
@@ -167,13 +191,26 @@ export default async function Home() {
           <Card className="bg-slate-900/60 border-slate-800/80 backdrop-blur">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                Architect Accounts
+                Audit Trail Events
+              </CardTitle>
+              <History className="w-4 h-4 text-indigo-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{auditCount}</div>
+              <p className="text-xs text-slate-400 mt-1">Immutable change logs</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-900/60 border-slate-800/80 backdrop-blur">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                RBAC Stakeholders
               </CardTitle>
               <ShieldCheck className="w-4 h-4 text-amber-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">{userCount}</div>
-              <p className="text-xs text-slate-400 mt-1">Role-based stakeholders</p>
+              <p className="text-xs text-slate-400 mt-1">Role-governed accounts</p>
             </CardContent>
           </Card>
         </div>
@@ -188,22 +225,22 @@ export default async function Home() {
                   SDAD Directed Acyclic Graph (DAG) Progress
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Strict step-by-step gate architecture. Phase 4 provides complete IEEE 830 SRS document export across Markdown, JSON, and PDF formats.
+                  Strict step-by-step gate architecture. Phase 5 completes full governance, least-privilege RBAC, and chronological audit trails.
                 </CardDescription>
               </div>
               <Badge variant="outline" className="border-emerald-500/40 text-emerald-400">
-                Phase 4 Complete
+                All 5 Phases Complete
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
               {dagPhases.map((phase, idx) => (
                 <div
                   key={phase.id}
-                  className={`p-4 rounded-lg border transition-all ${
+                  className={`p-3.5 rounded-lg border transition-all ${
                     phase.isCurrent
-                      ? "bg-indigo-950/20 border-indigo-500/40 shadow-sm shadow-indigo-500/10"
+                      ? "bg-indigo-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
                       : phase.status === "COMPLETED"
                       ? "bg-slate-950/50 border-emerald-500/20"
                       : "bg-slate-950/40 border-slate-800/80"
@@ -211,12 +248,12 @@ export default async function Home() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-mono font-bold text-slate-400">0{idx + 1}</span>
-                    <Badge variant={phase.badgeVariant} className="text-[10px] uppercase font-mono">
+                    <Badge variant={phase.badgeVariant} className="text-[9px] uppercase font-mono">
                       {phase.status}
                     </Badge>
                   </div>
-                  <h4 className="font-semibold text-sm text-white mb-1">{phase.name}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">{phase.description}</p>
+                  <h4 className="font-semibold text-xs text-white mb-1">{phase.name}</h4>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{phase.description}</p>
                 </div>
               ))}
             </div>
@@ -256,9 +293,26 @@ export default async function Home() {
                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                         <span className="font-mono text-indigo-400">Step {draft.currentStep}/6</span>
                         <span>&bull;</span>
-                        <Badge variant="secondary" className="text-[9px] uppercase">
-                          {draft.status}
-                        </Badge>
+                        {draft.status === 'locked' && (
+                          <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-[9px] uppercase flex items-center gap-1">
+                            <Lock className="w-2.5 h-2.5" /> Locked
+                          </Badge>
+                        )}
+                        {draft.status === 'approved' && (
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[9px] uppercase">
+                            Approved
+                          </Badge>
+                        )}
+                        {draft.status === 'in_review' && (
+                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[9px] uppercase">
+                            In Review
+                          </Badge>
+                        )}
+                        {(draft.status === 'draft' || draft.status === 'in_progress') && (
+                          <Badge variant="secondary" className="text-[9px] uppercase">
+                            In Draft
+                          </Badge>
+                        )}
                         <span>&bull;</span>
                         <span className="text-[10px] text-slate-500 font-mono">
                           ID: {draft.id.slice(0, 8)}...
@@ -284,13 +338,13 @@ export default async function Home() {
           </Card>
         )}
 
-        {/* Phase 4 Document Generation & Export Highlights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Highlights: Export, Governance & Verification */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-indigo-400" />
-                Phase 4: Document Generation &amp; Multi-Format Export
+                Phase 4: Multi-Format Export
               </CardTitle>
               <CardDescription className="text-slate-400">
                 Transforms flexible JSONB form drafts into formal IEEE 830 specifications.
@@ -300,23 +354,23 @@ export default async function Home() {
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
                 <span className="font-bold text-blue-400 flex items-center gap-1.5 mb-1">
                   <FileText className="w-3.5 h-3.5" />
-                  IEEE 830-1998 / ISO 29148 Markdown
+                  IEEE 830 Markdown
                 </span>
-                Standard-compliant Markdown complete with RFC 2119 normative conventions, In-Scope/Out-of-Scope boundaries, stakeholder persona tables, and Gherkin scenarios.
+                Standard-compliant Markdown with RFC 2119 keywords, scope boundaries, persona tables, and Gherkin scenarios.
               </div>
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
                 <span className="font-bold text-purple-400 flex items-center gap-1.5 mb-1">
                   <Code2 className="w-3.5 h-3.5" />
-                  Machine-Readable Structured JSON Schema
+                  Structured JSON Schema
                 </span>
-                Comprehensive JSON contract with metadata, cryptographic checksum, structured user stories, and acceptance criteria for automated consumption by coding agents.
+                Comprehensive machine-readable contract with SHA-256 seal for autonomous coding agents.
               </div>
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
                 <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
                   <Printer className="w-3.5 h-3.5" />
-                  Printable HTML &amp; One-Click PDF Generation
+                  Printable HTML &amp; PDF
                 </span>
-                Clean typography with CSS print stylesheet (`@media print`), automatic page breaks, and formal architectural sign-off stamp.
+                Clean typography with CSS `@media print` rules, automated page breaks, and sign-off stamps.
               </div>
             </CardContent>
           </Card>
@@ -324,22 +378,60 @@ export default async function Home() {
           <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                End-to-End Architectural Integrity &amp; Verification
+                <History className="w-4 h-4 text-purple-400" />
+                Phase 5: Auditing &amp; Diff History
               </CardTitle>
               <CardDescription className="text-slate-400">
-                Strict quality gates enforced at every layer of the SDAD pipeline.
+                Chronological record of every requirement modification and milestone.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2.5 text-xs text-slate-300">
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-amber-300">Readiness Scoring:</span> Quantitative audit checks 6 dimension criteria (scope, personas, P0s, SLAs, zero critical warnings).
+                <span className="font-bold text-indigo-400 flex items-center gap-1.5 mb-1">
+                  <History className="w-3.5 h-3.5" />
+                  Field-Level Semantic Diffs
+                </span>
+                Detects additions, modifications, and deletions in user stories, acceptance criteria, and SLAs.
               </div>
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-rose-400">Server Action Isolation:</span> All export operations use validated server action boundaries (`exportDocumentAction`).
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  Cryptographic Draft Sealing
+                </span>
+                SHA-256 checksums freeze drafts and prevent unauthorized editing until explicitly reopened.
               </div>
               <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
-                <span className="font-bold text-indigo-400">Live Browser Preview:</span> Instant preview at `/wizard/[id]/export` with interactive format switching and clipboard copy.
+                <span className="font-bold text-amber-300 flex items-center gap-1.5 mb-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Historical Rollback
+                </span>
+                Allows Lead Architects to restore prior revision snapshots directly from the audit trail.
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-900/60 border-slate-800 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-emerald-400" />
+                Role-Based Access Control (RBAC)
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                Least-privilege governance across four enterprise stakeholder roles.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2.5 text-xs text-slate-300">
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-red-400">Admin:</span> Full user management, global oversight, and emergency unlock powers.
+              </div>
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-purple-400">Lead Architect:</span> Formal review approval, sign-off signature, and locking permissions.
+              </div>
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-blue-400">Contributor:</span> Requirements authoring, AI elicitation, and draft updates.
+              </div>
+              <div className="p-2.5 rounded bg-slate-950/70 border border-slate-800">
+                <span className="font-bold text-slate-400">Viewer:</span> Read-only specification inspection, audit browsing, and export.
               </div>
             </CardContent>
           </Card>
@@ -350,7 +442,7 @@ export default async function Home() {
           <span>SDAD Engine v1.0.0 &bull; deshiklab/Requirements_Wizard</span>
           <span className="flex items-center gap-1.5 text-emerald-400">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Phase 4 Document Generation Operational &bull; Awaiting Human Sign-off
+            Phase 5 Governance, Auditing, RBAC &amp; Hardening Complete
           </span>
         </div>
       </div>

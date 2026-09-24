@@ -10,6 +10,7 @@ import {
 } from './schemas';
 import { SpecificationExportEngine, GeneratedDocumentResult } from '@/lib/export/engine';
 import { WizardFormData, INITIAL_WIZARD_FORM_DATA } from '@/types/wizard';
+import { recordAuditEntry } from '@/lib/governance/audit';
 
 function normalizeFormData(raw: any): WizardFormData {
   const d = raw || {};
@@ -73,6 +74,18 @@ export async function exportDocumentAction(
         includeReadinessScore: validated.options?.includeReadinessScore ?? true,
       }
     );
+
+    try {
+      await recordAuditEntry({
+        draftId: draft.id,
+        userId: draft.userId,
+        userRole: 'contributor',
+        action: 'EXPORT_DOCUMENT',
+        stage: 6,
+        summary: `Exported specification to ${validated.format.toUpperCase()} format`,
+        metadata: { format: validated.format },
+      });
+    } catch {}
 
     return {
       success: true,

@@ -1,3 +1,5 @@
+import { GovernanceState } from '@/lib/governance/types';
+
 export type ProjectArchetype =
   | 'web_app'
   | 'mobile_app'
@@ -113,6 +115,7 @@ export interface WizardFormData {
   step4_non_functional: Step4NonFunctionalData;
   step5_tech_and_context: Step5TechAndContextData;
   step6_review: Step6ReviewData;
+  governance?: GovernanceState;
 }
 
 export interface StepProgressState {

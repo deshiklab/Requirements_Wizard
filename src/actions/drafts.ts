@@ -11,6 +11,9 @@ import {
   AttachFileInput,
   ActionResponse,
 } from './schemas';
+import { canEditDraft, hasPermission } from '@/lib/governance/rbac';
+import { computeDraftDiff } from '@/lib/governance/diff';
+import { recordAuditEntry } from '@/lib/governance/audit';
 
 export type { SaveDraftInput, AttachFileInput, ActionResponse };
 
@@ -35,13 +38,25 @@ export async function saveDraftAction(input: SaveDraftInput): Promise<ActionResp
       // Check if draft exists
       const existingDraft = await db.orm.public.FormDraft.where({ id: validated.id }).first();
       if (existingDraft) {
-        // Authorization check: ensure user owns the draft
-        if (existingDraft.userId !== validated.userId) {
+        // Authorization check: ensure user owns the draft (or is admin)
+        if (existingDraft.userId !== validated.userId && user.role !== 'admin') {
           return {
             success: false,
             error: 'Unauthorized: User does not own this requirements draft.',
           };
         }
+
+        // Governance RBAC & Immutability check
+        const editCheck = canEditDraft(user.role, existingDraft.status);
+        if (!editCheck.allowed) {
+          return {
+            success: false,
+            error: editCheck.reason || 'Unauthorized to modify this specification.',
+          };
+        }
+
+        // Compute semantic diff
+        const diff = computeDraftDiff(existingDraft.data as any, validated.data as any);
 
         const updated = await db.orm.public.FormDraft.where({ id: validated.id }).update({
           title: validated.title,
@@ -50,6 +65,24 @@ export async function saveDraftAction(input: SaveDraftInput): Promise<ActionResp
           data: validated.data,
           stepProgress: validated.stepProgress ?? null,
         });
+
+        // Record audit entry if changes occurred
+        if (diff.totalChanges > 0) {
+          try {
+            await recordAuditEntry({
+              draftId: existingDraft.id,
+              userId: user.id,
+              userRole: user.role,
+              action: 'UPDATE_STAGE',
+              stage: validated.currentStep,
+              summary: diff.summary,
+              diff,
+              snapshot: validated.data,
+            });
+          } catch (auditErr) {
+            console.warn('[Audit Log Warning]:', auditErr);
+          }
+        }
 
         try {
           revalidatePath(`/wizard/${validated.id}`);
@@ -66,6 +99,14 @@ export async function saveDraftAction(input: SaveDraftInput): Promise<ActionResp
       }
     }
 
+    // Role check for new draft creation
+    if (!hasPermission(user.role, 'draft:create')) {
+      return {
+        success: false,
+        error: `Role "${user.role}" does not have permission to create drafts.`,
+      };
+    }
+
     // Create new draft
     const newDraftId = validated.id || crypto.randomUUID();
     const created = await db.orm.public.FormDraft.create({
@@ -77,6 +118,20 @@ export async function saveDraftAction(input: SaveDraftInput): Promise<ActionResp
       data: validated.data,
       stepProgress: validated.stepProgress ?? null,
     });
+
+    try {
+      await recordAuditEntry({
+        draftId: newDraftId,
+        userId: user.id,
+        userRole: user.role,
+        action: 'CREATE_DRAFT',
+        stage: validated.currentStep,
+        summary: `Created new requirements specification "${validated.title}"`,
+        snapshot: validated.data,
+      });
+    } catch (auditErr) {
+      console.warn('[Audit Log Warning]:', auditErr);
+    }
 
     try {
       revalidatePath('/');
@@ -176,6 +231,14 @@ export async function attachFileReferenceAction(input: AttachFileInput): Promise
         return {
           success: false,
           error: `Draft with ID "${validated.draftId}" not found.`,
+        };
+      }
+
+      const editCheck = canEditDraft(user.role, draft.status);
+      if (!editCheck.allowed) {
+        return {
+          success: false,
+          error: `Cannot attach files: ${editCheck.reason}`,
         };
       }
     }

@@ -75,6 +75,8 @@ export default async function ExportPage({ params }: ExportPageProps) {
         markdownDoc={markdownDoc}
         jsonDoc={jsonDoc}
         htmlDoc={htmlDoc}
+        status={draft.status}
+        userId={draft.userId}
       />
     </div>
   );

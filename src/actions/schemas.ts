@@ -34,7 +34,17 @@ export const CreateUserSchema = z.object({
   id: z.string().uuid().optional(),
   email: z.string().email('Invalid email address'),
   name: z.string().min(1).optional(),
-  role: z.enum(['user', 'admin', 'architect', 'stakeholder']).default('user'),
+  role: z
+    .enum([
+      'user',
+      'admin',
+      'architect',
+      'lead_architect',
+      'contributor',
+      'viewer',
+      'stakeholder',
+    ])
+    .default('contributor'),
 });
 
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
@@ -125,6 +135,72 @@ export const DirectExportSchema = z.object({
 });
 
 export type DirectExportInput = z.infer<typeof DirectExportSchema>;
+
+// Phase 5: Governance, Auditing & RBAC Schemas
+export const SubmitForReviewSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  userRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']).optional().default('contributor'),
+  readinessScore: z.number().min(0).max(100),
+});
+
+export type SubmitForReviewInput = z.infer<typeof SubmitForReviewSchema>;
+
+export const SignOffDraftSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  userRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']).optional(),
+  signOffArchitect: z.string().min(3, 'Sign-off architect name must be at least 3 characters'),
+  roleTitle: z.string().optional(),
+  organization: z.string().optional(),
+  notes: z.string().optional(),
+  readinessScore: z.number().min(0).max(100),
+});
+
+export type SignOffDraftInput = z.infer<typeof SignOffDraftSchema>;
+
+export const LockSpecificationSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  userRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']).optional(),
+  actorName: z.string().min(2, 'Actor name is required'),
+});
+
+export type LockSpecificationInput = z.infer<typeof LockSpecificationSchema>;
+
+export const ReopenSpecificationSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  userRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']).optional(),
+  actorName: z.string().min(2, 'Actor name is required'),
+  reason: z.string().min(8, 'Reopen audit reason must be at least 8 characters'),
+});
+
+export type ReopenSpecificationInput = z.infer<typeof ReopenSpecificationSchema>;
+
+export const RestoreRevisionSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  userId: z.string().min(1, 'User ID is required'),
+  userRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']).optional(),
+  auditLogId: z.string().min(1, 'Audit Log ID is required'),
+});
+
+export type RestoreRevisionInput = z.infer<typeof RestoreRevisionSchema>;
+
+export const GetAuditTrailSchema = z.object({
+  draftId: z.string().min(1, 'Draft ID is required'),
+  limit: z.number().int().min(1).max(200).optional().default(50),
+});
+
+export type GetAuditTrailInput = z.infer<typeof GetAuditTrailSchema>;
+
+export const UpdateUserRoleSchema = z.object({
+  adminUserId: z.string().min(1, 'Admin user ID is required'),
+  targetUserId: z.string().min(1, 'Target user ID is required'),
+  newRole: z.enum(['admin', 'lead_architect', 'contributor', 'viewer']),
+});
+
+export type UpdateUserRoleInput = z.infer<typeof UpdateUserRoleSchema>;
 
 export type ActionResponse<T> =
   | { success: true; data: T; message?: string }

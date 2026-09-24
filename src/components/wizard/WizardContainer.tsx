@@ -28,6 +28,10 @@ import { Step6Review } from './Step6Review';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DocumentIngestionResult } from '@/lib/ai/types';
+import { GovernanceBar } from '@/components/governance/GovernanceBar';
+import { AuditTrailViewer } from '@/components/governance/AuditTrailViewer';
+import { DraftStatus, UserRole } from '@/lib/governance/types';
+import { canEditDraft } from '@/lib/governance/rbac';
 import {
   Save,
   ArrowLeft,
@@ -36,6 +40,8 @@ import {
   Loader2,
   Workflow,
   Sparkles,
+  History,
+  X,
 } from 'lucide-react';
 
 interface WizardContainerProps {
@@ -60,6 +66,9 @@ export function WizardContainer({
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [draftTitle, setDraftTitle] = useState<string>(initialTitle);
+  const [status, setStatus] = useState<DraftStatus>((initialStatus as DraftStatus) || 'draft');
+  const [userRole, setUserRole] = useState<UserRole>('lead_architect');
+  const [showAuditDrawer, setShowAuditDrawer] = useState<boolean>(false);
   const [formData, setFormData] = useState<WizardFormData>({
     ...INITIAL_WIZARD_FORM_DATA,
     ...initialData,
@@ -105,6 +114,14 @@ export function WizardContainer({
   }, [formData.step1_identity.projectName, draftTitle]);
 
   const saveCurrentDraft = async (targetStep = currentStep, customStatus?: string) => {
+    // Phase 5 Governance & RBAC Check
+    const editCheck = canEditDraft(userRole, status);
+    if (!editCheck.allowed) {
+      setSaveStatusMessage(`Blocked: ${editCheck.reason}`);
+      setTimeout(() => setSaveStatusMessage(''), 4500);
+      return null;
+    }
+
     setIsSaving(true);
     setSaveStatusMessage('Saving draft to PostgreSQL...');
 
@@ -121,7 +138,7 @@ export function WizardContainer({
       userId: initialUserId,
       title: draftTitle,
       currentStep: targetStep,
-      status: (customStatus || (targetStep === 6 ? 'review' : 'in_progress')) as any,
+      status: (customStatus || (targetStep === 6 ? 'in_review' : status)) as any,
       data: formData,
       stepProgress,
     });
@@ -260,6 +277,44 @@ export function WizardContainer({
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* SDAD Phase 5 Governance Bar */}
+      {draftId && (
+        <GovernanceBar
+          draftId={draftId}
+          status={status}
+          currentRole={userRole}
+          currentUserId={initialUserId}
+          readinessScore={formData.step6_review?.specReadinessScore ?? 85}
+          sealedChecksum={(formData as any)?.governance?.sealedChecksum}
+          onRoleChange={(r) => setUserRole(r)}
+          onStatusChange={(s) => setStatus(s)}
+          onOpenAuditTrail={() => setShowAuditDrawer(!showAuditDrawer)}
+        />
+      )}
+
+      {/* Audit Trail Drawer / Collapsible View */}
+      {showAuditDrawer && draftId && (
+        <div className="relative mb-6">
+          <div className="flex items-center justify-between pb-2 mb-2">
+            <span className="text-sm font-semibold text-slate-300">Auditing & Revision History</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAuditDrawer(false)}
+              className="text-slate-400 hover:text-white h-7 text-xs"
+            >
+              <X className="w-4 h-4 mr-1" /> Close Audit Trail
+            </Button>
+          </div>
+          <AuditTrailViewer
+            draftId={draftId}
+            currentUserRole={userRole}
+            currentUserId={initialUserId}
+            onRevisionRestored={() => window.location.reload()}
+          />
+        </div>
+      )}
+
       {/* Top Header & Autosave Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur">
         <div className="flex items-center gap-3">
