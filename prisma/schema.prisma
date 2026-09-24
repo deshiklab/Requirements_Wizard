@@ -1,0 +1,61 @@
+// Prisma Schema specification for Requirements Wizard
+// Provider: PostgreSQL with native JSONB support
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String          @id @default(uuid())
+  email     String          @unique
+  name      String?
+  role      String          @default("user")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  drafts    FormDraft[]
+  files     FileReference[]
+
+  @@map("user")
+}
+
+model FormDraft {
+  id           String          @id @default(uuid())
+  title        String          @default("Untitled Requirements Spec")
+  currentStep  Int             @default(1)
+  status       String          @default("draft")
+  data         Json            @db.JsonB // Flexible multi-stage form draft JSONB storage
+  stepProgress Json?           @db.JsonB // Step-by-step validation & completion states
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files        FileReference[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("formDraft")
+}
+
+model FileReference {
+  id           String     @id @default(uuid())
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  filePath     String
+  metadata     Json?      @db.JsonB // Flexible metadata (hash, tokens, parsed summary)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draftId      String?
+  draft        FormDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([draftId])
+  @@map("fileReference")
+}
