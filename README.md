@@ -1,12 +1,26 @@
 # Requirements Wizard
 
-A dynamic, AI-driven software requirements specification and document export platform engineered under the **Spec-Driven Agentic Development (SDAD)** framework.
+A dynamic, AI-driven software requirements specification, architecture diagram, and document export platform engineered under the **Spec-Driven Agentic Development (SDAD)** framework.
+
+[![CI/CD Pipeline](https://github.com/deshiklab/Requirements_Wizard/actions/workflows/ci.yml/badge.svg)](https://github.com/deshiklab/Requirements_Wizard/actions/workflows/ci.yml)
+[![PR #1](https://img.shields.io/badge/PR-%231%20Open-blue.svg)](https://github.com/deshiklab/Requirements_Wizard/pull/1)
+[![Tests Passing](https://img.shields.io/badge/tests-303%20passed-brightgreen.svg)](https://github.com/deshiklab/Requirements_Wizard)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14.2%20App%20Router-black.svg)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
+
+## 🌐 Live Application & Links
+
+- **Pull Request:** [GitHub PR #1 (Full SDAD Implementation)](https://github.com/deshiklab/Requirements_Wizard/pull/1)
+- **Active Working Branch:** [`arena/01a0cd80-requirements-wizard`](https://github.com/deshiklab/Requirements_Wizard/tree/arena/01a0cd80-requirements-wizard)
+- **Live Preview URL:** [`https://3000-iv922jlyfrwfec24l3ks5.e2b.app`](https://3000-iv922jlyfrwfec24l3ks5.e2b.app)
 
 ---
 
 ## 🎯 Architecture & SDAD DAG Workflow
 
-The platform follows a strict Directed Acyclic Graph (DAG) development progression. All 5 phases are fully implemented, verified, and active in the live environment:
+The platform follows a strict Directed Acyclic Graph (DAG) development progression. All phases and the architecture diagram engine are fully implemented, verified, and active in the live environment:
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -31,10 +45,15 @@ The platform follows a strict Directed Acyclic Graph (DAG) development progressi
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │  Phase 5: Governance, Auditing, RBAC & Hardening       │  <-- [COMPLETED & VERIFIED] (79/79 tests)
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│  Phase 6: Mermaid.js Architecture Diagram Engine       │  <-- [COMPLETED & VERIFIED] (48/48 tests)
 └────────────────────────────────────────────────────────┘
 ```
 
-**Cumulative Automated Test Suite:** **255 / 255 passing assertions across 5 verification test suites (100% pass rate).**
+**Cumulative Automated Test Suite:** **303 / 303 passing assertions across 6 verification test suites (100% pass rate).**
 
 ---
 
@@ -44,9 +63,11 @@ The platform follows a strict Directed Acyclic Graph (DAG) development progressi
 - **Styling:** Tailwind CSS + Shadcn UI component system
 - **Database:** PostgreSQL 18 with native JSONB state storage
 - **ORM & Data Modeling:** Prisma ORM (PSL Contracts, WASM engine)
+- **Diagram Engine:** Mermaid.js (C4 Container, Sequence Workflow, ER Data Model, Governance State Machine)
 - **Validation:** Zod runtime schema guards
 - **Specification Standard:** IEEE Std 830-1998 / ISO/IEC/IEEE 29148
 - **Governance:** Role-Based Access Control (RBAC), SHA-256 cryptographic seals, chronological audit logging, and historical rollback
+- **Containerization & CI/CD:** Docker multi-stage build, Docker Compose, GitHub Actions
 
 ---
 
@@ -54,11 +75,16 @@ The platform follows a strict Directed Acyclic Graph (DAG) development progressi
 
 ```
 Requirements_Wizard/
-├── project-spec.md            # Formal SDAD project specification & DAG blueprint (v1.4.0)
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI/CD (Lint, 303 Tests, Next Build, Docker)
+├── Dockerfile                 # Multi-stage production container build (Node.js 20-alpine)
+├── docker-compose.yml         # Containerized Next.js + PostgreSQL 16 orchestration
+├── docker-entrypoint.sh       # Database connectivity check & automatic schema sync
+├── project-spec.md            # Formal SDAD project specification & DAG blueprint (v1.5.0)
 ├── prisma.config.ts           # Prisma configuration
 ├── components.json            # Shadcn UI configuration
 ├── tailwind.config.ts         # Tailwind design system & theme configuration
-├── .env.example               # Environment variables template
 ├── prisma/
 │   └── schema.prisma          # PostgreSQL database schema (Users, Drafts, Files, Audit)
 ├── scripts/
@@ -67,7 +93,8 @@ Requirements_Wizard/
 │   ├── test-phase2.ts         # Phase 2 verification: Wizard engine, archetype rules, autosave
 │   ├── test-phase3.ts         # Phase 3 verification: AI ambiguity scoring, Gherkin scenarios
 │   ├── test-phase4.ts         # Phase 4 verification: IEEE 830 Markdown, JSON, HTML export
-│   └── test-phase5.ts         # Phase 5 verification: RBAC, auditing, diffs, SHA-256 seals
+│   ├── test-phase5.ts         # Phase 5 verification: RBAC, auditing, diffs, SHA-256 seals
+│   └── test-phase6-diagrams.ts# Phase 6 verification: Mermaid.js C4, sequence, ER & state diagrams
 └── src/
     ├── actions/
     │   ├── ai.ts              # AI elicitation, ambiguity detector, Gherkin server actions
@@ -85,10 +112,12 @@ Requirements_Wizard/
     │   │   └── [id]/
     │   │       ├── page.tsx   # Dynamic draft resumption with Governance Bar & Audit Drawer
     │   │       └── export/
-    │   │           └── page.tsx # Executive View, Markdown, JSON, and Audit Trail tabs
+    │   │           └── page.tsx # Executive View, Diagrams, Markdown, JSON, and Audit tabs
     ├── components/
+    │   ├── diagrams/
+    │   │   └── MermaidViewer.tsx        # Interactive Mermaid viewer (C4, Sequence, ER, State)
     │   ├── export/
-    │   │   └── DocumentExportViewer.tsx # Interactive viewer with copy, download & print
+    │   │   └── DocumentExportViewer.tsx # Interactive viewer with copy, download, diagrams & print
     │   ├── governance/
     │   │   ├── AuditTrailViewer.tsx     # Chronological timeline with visual diff cards & rollback
     │   │   └── GovernanceBar.tsx        # Status badge, role switcher, sign-off & lock controls
@@ -97,6 +126,7 @@ Requirements_Wizard/
     ├── lib/
     │   ├── ai/                # Ambiguity scoring, Gherkin generator, context ingestion
     │   ├── conditional-logic/ # Real-time rule evaluation engine
+    │   ├── diagrams/          # Mermaid architecture synthesis (C4, sequence, ER, state)
     │   ├── export/            # Multi-format IEEE 830 compilation facade
     │   └── governance/        # RBAC matrix, diff engine, audit logger, sign-off state machine
     └── types/
@@ -105,26 +135,84 @@ Requirements_Wizard/
 
 ---
 
-## 🚀 Quick Start & Verification
+## 🐳 Docker & Container Deployment
 
-### 1. Database Initialization
+### Option 1: Docker Compose (Full Stack with PostgreSQL)
+
+Spin up both the Next.js application and a persistent PostgreSQL database with a single command:
+
 ```bash
-npm run db:start
+docker compose up --build
 ```
 
-### 2. Execute Cumulative Test Suite
+- Application URL: `http://localhost:3000`
+- PostgreSQL Port: `5432`
+- Health checks automatically ensure the database is fully initialized before the application begins serving traffic.
+
+To stop and remove containers:
 ```bash
+docker compose down -v
+```
+
+### Option 2: Standalone Docker Container
+
+Build and run the production image using an external database (e.g. Neon, Supabase, AWS RDS):
+
+```bash
+# 1. Build the production Docker image
+docker build -t requirements-wizard:latest .
+
+# 2. Run the container with your PostgreSQL connection string
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require" \
+  requirements-wizard:latest
+```
+
+---
+
+## ☁️ Cloud Platform Deployment (Vercel / Railway / Render)
+
+### 1-Click Deploy to Vercel
+
+1. Fork or import [`deshiklab/Requirements_Wizard`](https://github.com/deshiklab/Requirements_Wizard) into [Vercel](https://vercel.com/new).
+2. Set the root directory to `./` and branch to `arena/01a0cd80-requirements-wizard` (or `main` after merging [PR #1](https://github.com/deshiklab/Requirements_Wizard/pull/1)).
+3. In **Environment Variables**, provide:
+   ```env
+   DATABASE_URL="postgresql://user:password@your-postgres-host:5432/requirements_wizard"
+   ```
+4. Click **Deploy**. Vercel will build and host the Next.js App Router application with edge global CDN distribution.
+
+---
+
+## 🧪 Cumulative Verification Suite (303 Tests)
+
+Execute the full SDAD verification protocol:
+
+```bash
+# Run all 6 verification test suites (Phase 1 through Phase 6):
 npm test
-# Or run individual phase suites:
-# npm run test:phase1
-# npm run test:phase2
-# npm run test:phase3
-# npm run test:phase4
-# npm run test:phase5
+
+# Or run individual test phases:
+npm run test:phase1    # Database, JSONB mutations & PSL contract (22 checks)
+npm run test:phase2    # Multi-stage form & dynamic rule engine (44 checks)
+npm run test:phase3    # AI ambiguity scorer & Gherkin generator (52 checks)
+npm run test:phase4    # IEEE 830 Markdown, JSON Schema & HTML exporter (58 checks)
+npm run test:phase5    # RBAC matrix, SHA-256 seals & audit rollback (79 checks)
+npm run test:diagrams  # Mermaid.js C4, Sequence, ER & State diagrams (48 checks)
 ```
 
-### 3. Start Development Server
+---
+
+## 💻 Local Development
+
 ```bash
+# 1. Install dependencies
+npm install --legacy-peer-deps
+
+# 2. Ensure database is running & tables are initialized
+npm run db:start
+
+# 3. Start development server
 npm run dev
-# Open http://localhost:3000
+# Browse to http://localhost:3000
 ```

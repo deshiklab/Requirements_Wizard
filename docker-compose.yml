@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: requirements-wizard-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/requirements_wizard
+      - NEXT_TELEMETRY_DISABLED=1
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rw-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: requirements-wizard-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: requirements_wizard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d requirements_wizard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - rw-network
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  rw-network:
+    driver: bridge
