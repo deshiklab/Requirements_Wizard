@@ -9,7 +9,8 @@ WORKDIR /app
 
 # Copy dependency manifests
 COPY package.json package-lock.json ./
-RUN npm install --legacy-peer-deps
+# Use the committed lockfile so the image matches CI exactly (no floating RC resolves)
+RUN npm ci --legacy-peer-deps
 
 # --- Stage 2: Build Application ---
 FROM node:20-alpine AS builder

@@ -19,3 +19,7 @@ out
 .turbo
 .cache
 .arena
+# Local PGlite wire-server data must never be baked into the image
+.pgdata
+pgdata
+*.tsbuildinfo
