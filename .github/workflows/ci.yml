@@ -49,6 +49,11 @@ jobs:
       - name: Verify Code Quality & ESLint
         run: npm run lint
 
+      - name: Bootstrap Database Schema (Idempotent)
+        env:
+          DATABASE_URL: postgresql://postgres:password@127.0.0.1:5432/requirements_wizard
+        run: npm run db:start
+
       - name: Run Cumulative SDAD Automated Verification (303 Assertions)
         env:
           DATABASE_URL: postgresql://postgres:password@127.0.0.1:5432/requirements_wizard

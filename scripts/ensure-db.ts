@@ -1,58 +1,130 @@
 import { spawn } from 'child_process';
-import net from 'net';
+import fs from 'fs';
 import path from 'path';
 import { Client } from 'pg';
 
 const PG_PORT = 5432;
+const DEFAULT_DATABASE_URL = 'postgresql://postgres:password@127.0.0.1:5432/requirements_wizard';
 
-function isPortOpen(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    socket.setTimeout(500);
-    socket.once('connect', () => {
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once('timeout', () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.once('error', () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.connect(port, '127.0.0.1');
+/** Grace period while a freshly spawned PGlite server initialises its data directory. */
+const SPAWN_READY_TIMEOUT_MS = 90_000;
+/** Grace period when something is already listening on the port. */
+const EXISTING_READY_TIMEOUT_MS = 30_000;
+const RETRY_INTERVAL_MS = 750;
+
+type ServerState = 'ready' | 'refused' | 'unresponsive';
+
+/**
+ * Probe PostgreSQL over the real wire protocol.
+ *
+ * IMPORTANT: never probe with a bare TCP socket. The PGlite wire server opens its
+ * listen socket (~0.3s) well before its data directory has finished initialising
+ * (~4s). A raw connect-and-disconnect sends no startup packet, and the server waits
+ * on that half-open connection forever — every later client then hangs and
+ * `npm test` never returns. A genuine client handshake (or an ECONNREFUSED) is safe.
+ */
+async function probePostgres(connectionString: string): Promise<ServerState> {
+  const client = new Client({
+    connectionString,
+    connectionTimeoutMillis: 3_000,
+    query_timeout: 5_000,
+    statement_timeout: 5_000,
   });
+
+  try {
+    await client.connect();
+    await client.query('SELECT 1');
+    await client.end();
+    return 'ready';
+  } catch (err) {
+    try {
+      await client.end();
+    } catch {
+      // The client never finished handshaking; nothing to release.
+    }
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code === 'ECONNREFUSED' || code === 'EADDRNOTAVAIL' || code === 'ENOENT') {
+      return 'refused';
+    }
+    return 'unresponsive';
+  }
 }
 
-async function waitForPort(port: number, maxRetries = 20): Promise<void> {
-  for (let i = 0; i < maxRetries; i++) {
-    const open = await isPortOpen(port);
-    if (open) return;
-    await new Promise((r) => setTimeout(r, 250));
+/** Poll with real queries until the server answers, or fail fast with a usable message. */
+async function waitForPostgres(
+  connectionString: string,
+  opts: { timeoutMs: number; spawned: boolean; logFile?: string },
+): Promise<void> {
+  const deadline = Date.now() + opts.timeoutMs;
+  let lastState: ServerState = 'refused';
+
+  while (Date.now() < deadline) {
+    lastState = await probePostgres(connectionString);
+    if (lastState === 'ready') return;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL_MS));
   }
-  throw new Error(`Port ${port} did not become available in time.`);
+
+  if (opts.spawned) {
+    throw new Error(
+      `The PGlite wire server did not become ready within ${Math.round(opts.timeoutMs / 1000)}s.` +
+        (opts.logFile ? ` See ${opts.logFile} for details.` : '') +
+        ` Alternatively, start PostgreSQL yourself and point DATABASE_URL at it.`,
+    );
+  }
+
+  throw new Error(
+    `Something is listening on port ${PG_PORT} but is not answering PostgreSQL queries ` +
+      `(last state: ${lastState}). This is usually a PGlite wire server left in a broken ` +
+      `state by an interrupted run. Stop it (or point DATABASE_URL at a healthy PostgreSQL) ` +
+      `and re-run.`,
+  );
+}
+
+/** Start the bundled PGlite wire server detached so it outlives this process (each
+ *  verification phase runs in its own Node process and must reach the same server). */
+function startPgliteServer(): { logFile: string } {
+  const serverScript = path.join(__dirname, 'pg-server.js');
+  const dataDir = path.join(__dirname, '..', '.pgdata');
+  fs.mkdirSync(dataDir, { recursive: true });
+
+  // Keep the child's output so a failed start is diagnosable (previously discarded).
+  const logFile = path.join(dataDir, 'pglite-server.log');
+  const logFd = fs.openSync(logFile, 'a');
+
+  const child = spawn(process.execPath, [serverScript], {
+    detached: true,
+    stdio: ['ignore', logFd, logFd],
+  });
+  child.unref();
+  fs.closeSync(logFd);
+
+  return { logFile };
 }
 
 export async function ensurePostgres(): Promise<void> {
-  const open = await isPortOpen(PG_PORT);
-  if (!open) {
-    console.log('PostgreSQL is not running on port 5432. Starting PGlite wire server...');
-    const serverScript = path.join(__dirname, 'pg-server.js');
-    const child = spawn(process.execPath, [serverScript], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
+  const connectionString = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
 
-    await waitForPort(PG_PORT);
-    console.log('PostgreSQL server is now listening on port 5432.');
+  const state = await probePostgres(connectionString);
+
+  if (state === 'refused') {
+    console.log(`PostgreSQL is not reachable on port ${PG_PORT}. Starting PGlite wire server...`);
+    const { logFile } = startPgliteServer();
+    await waitForPostgres(connectionString, {
+      timeoutMs: SPAWN_READY_TIMEOUT_MS,
+      spawned: true,
+      logFile,
+    });
+    console.log(`PostgreSQL server is now ready on port ${PG_PORT} (log: ${logFile}).`);
+  } else {
+    // Either already serving, or holding the port without answering: both get a bounded wait.
+    await waitForPostgres(connectionString, {
+      timeoutMs: EXISTING_READY_TIMEOUT_MS,
+      spawned: false,
+    });
   }
 
   // Ensure DB & Tables exist
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@127.0.0.1:5432/requirements_wizard',
-  });
+  const client = new Client({ connectionString });
   await client.connect();
 
   await client.query(`
